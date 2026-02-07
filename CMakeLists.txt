@@ -78,6 +78,7 @@ add_executable(tests
     tests/test_output_formatter.cpp
     tests/test_logger.cpp
     tests/test_config_file.cpp
+    tests/test_semantic_interfaces.cpp
     ${SOURCES}
 )
 
