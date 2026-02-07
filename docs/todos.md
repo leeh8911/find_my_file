@@ -145,19 +145,20 @@
 ### 목표
 파일 내용의 의미를 이해하고 자연어 쿼리로 관련 파일을 찾는 기능 추가
 
-### 1. 인터페이스 설계 및 추상화
-- [ ] IEmbeddingProvider 인터페이스 정의
-  - [ ] generateEmbedding(text) → vector<float>
-  - [ ] batchGenerate(texts) → vector<vector<float>>
-  - [ ] getDimension() → size_t
-- [ ] IVectorStore 인터페이스 정의
-  - [ ] add(id, vector, metadata)
-  - [ ] search(queryVector, topK) → vector<SearchResult>
-  - [ ] remove(id)
-  - [ ] save(path) / load(path)
-- [ ] SemanticResult 구조체 정의
-  - [ ] FileInfo, relevanceScore, matchedChunks
-- [ ] 단위 테스트: 인터페이스 mock 구현
+### 1. 인터페이스 설계 및 추상화 ✅ **완료**
+- [x] IEmbeddingProvider 인터페이스 정의
+  - [x] generateEmbedding(text) → vector<float>
+  - [x] batchGenerate(texts) → vector<vector<float>>
+  - [x] getDimension() → size_t
+- [x] IVectorStore 인터페이스 정의
+  - [x] add(id, vector, metadata)
+  - [x] search(queryVector, topK) → vector<SearchResult>
+  - [x] remove(id)
+  - [x] save(path) / load(path)
+- [x] SemanticResult 구조체 정의
+  - [x] FileInfo, relevanceScore, matchedChunks
+- [x] 단위 테스트: 인터페이스 mock 구현
+- 커밋: fc5d9a1 "feat: implement semantic search interfaces"
 
 ### 2. Mock Provider 구현 (테스트용)
 - [ ] MockEmbeddingProvider 클래스
