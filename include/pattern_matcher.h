@@ -1,6 +1,7 @@
 #ifndef PATTERN_MATCHER_H
 #define PATTERN_MATCHER_H
 
+#include <regex>
 #include <string>
 
 namespace fmf
@@ -32,6 +33,17 @@ class PatternMatcher
      */
     static bool matchExact(const std::string& pattern, const std::string& text,
                            bool caseSensitive = true);
+
+    /**
+     * @brief Match a string against a regular expression
+     * @param regexPattern Regular expression pattern
+     * @param text Text to match against the pattern
+     * @param caseSensitive Whether to perform case-sensitive matching
+     * @return true if the text matches the regex, false otherwise
+     * @throws std::regex_error if the pattern is invalid
+     */
+    static bool matchRegex(const std::string& regexPattern,
+                          const std::string& text, bool caseSensitive = true);
 
  private:
     /**

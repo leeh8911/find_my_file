@@ -42,11 +42,30 @@ void SearchCriteria::setMinSize(std::uintmax_t size) { minSize_ = size; }
 
 void SearchCriteria::setMaxSize(std::uintmax_t size) { maxSize_ = size; }
 
+void SearchCriteria::setMinModifiedTime(
+    const std::filesystem::file_time_type& time)
+{
+    minModifiedTime_ = time;
+}
+
+void SearchCriteria::setMaxModifiedTime(
+    const std::filesystem::file_time_type& time)
+{
+    maxModifiedTime_ = time;
+}
+
+void SearchCriteria::setContentPattern(const std::string& pattern)
+{
+    contentPattern_ = pattern;
+}
+
 bool SearchCriteria::isEmpty() const
 {
     return namePattern_.empty() && pathPattern_.empty() &&
-           extensions_.empty() && !minSize_.has_value() &&
-           !maxSize_.has_value() && !filesOnly_ && !directoriesOnly_;
+           contentPattern_.empty() && extensions_.empty() &&
+           !minSize_.has_value() && !maxSize_.has_value() &&
+           !minModifiedTime_.has_value() && !maxModifiedTime_.has_value() &&
+           !filesOnly_ && !directoriesOnly_;
 }
 
 }  // namespace fmf

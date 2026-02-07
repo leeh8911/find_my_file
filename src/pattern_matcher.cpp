@@ -104,4 +104,25 @@ std::string PatternMatcher::toLower(const std::string& str)
     return result;
 }
 
+bool PatternMatcher::matchRegex(const std::string& regexPattern,
+                                const std::string& text, bool caseSensitive)
+{
+    try
+    {
+        std::regex::flag_type flags = std::regex::ECMAScript;
+        if (!caseSensitive)
+        {
+            flags |= std::regex::icase;
+        }
+
+        std::regex regex(regexPattern, flags);
+        return std::regex_search(text, regex);
+    }
+    catch (const std::regex_error&)
+    {
+        // If regex is invalid, return false
+        return false;
+    }
+}
+
 }  // namespace fmf

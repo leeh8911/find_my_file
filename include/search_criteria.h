@@ -1,6 +1,8 @@
 #ifndef SEARCH_CRITERIA_H
 #define SEARCH_CRITERIA_H
 
+#include <chrono>
+#include <filesystem>
 #include <optional>
 #include <string>
 #include <vector>
@@ -133,6 +135,63 @@ class SearchCriteria
     bool isDirectoriesOnly() const { return directoriesOnly_; }
 
     /**
+     * @brief Set whether to use regex for name pattern matching
+     */
+    void setUseRegex(bool useRegex) { useRegex_ = useRegex; }
+
+    /**
+     * @brief Check if regex matching is enabled
+     */
+    bool isUseRegex() const { return useRegex_; }
+
+    /**
+     * @brief Set minimum modification time filter
+     * @param time Minimum last write time
+     */
+    void setMinModifiedTime(const std::filesystem::file_time_type& time);
+
+    /**
+     * @brief Set maximum modification time filter
+     * @param time Maximum last write time
+     */
+    void setMaxModifiedTime(const std::filesystem::file_time_type& time);
+
+    /**
+     * @brief Get minimum modification time
+     * @return Minimum time or nullopt if not set
+     */
+    std::optional<std::filesystem::file_time_type> getMinModifiedTime() const
+    {
+        return minModifiedTime_;
+    }
+
+    /**
+     * @brief Get maximum modification time
+     * @return Maximum time or nullopt if not set
+     */
+    std::optional<std::filesystem::file_time_type> getMaxModifiedTime() const
+    {
+        return maxModifiedTime_;
+    }
+
+    /**
+     * @brief Set content pattern to search within files
+     * @param pattern Pattern to search in file contents
+     */
+    void setContentPattern(const std::string& pattern);
+
+    /**
+     * @brief Get content pattern
+     * @return Content pattern or empty if not set
+     */
+    std::string getContentPattern() const { return contentPattern_; }
+
+    /**
+     * @brief Check if content search is enabled
+     */
+    bool hasContentPattern() const { return !contentPattern_.empty(); }
+
+    /**
      * @brief Check if any criteria is set
      * @return true if any search criteria is configured
      */
@@ -141,12 +200,16 @@ class SearchCriteria
  private:
     std::string namePattern_;
     std::string pathPattern_;
+    std::string contentPattern_;
     std::vector<std::string> extensions_;
     std::optional<std::uintmax_t> minSize_;
     std::optional<std::uintmax_t> maxSize_;
+    std::optional<std::filesystem::file_time_type> minModifiedTime_;
+    std::optional<std::filesystem::file_time_type> maxModifiedTime_;
     bool caseSensitive_ = true;
     bool filesOnly_ = false;
     bool directoriesOnly_ = false;
+    bool useRegex_ = false;
 };
 
 }  // namespace fmf
