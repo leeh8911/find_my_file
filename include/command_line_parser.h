@@ -38,8 +38,10 @@ struct ApplicationConfig
     std::string targetPath;    ///< Target directory path
     std::string ignoreFile;    ///< Path to ignore patterns file
     OutputFormat outputFormat = OutputFormat::Default;  ///< Output format type
-    bool useColor = false;    ///< Enable colored output
-    SearchCriteria criteria;  ///< Search criteria and filters
+    bool useColor = false;     ///< Enable colored output
+    int verbosity = 0;         ///< Verbosity level (0=default, 1=info, 2=debug)
+    std::string logFile;       ///< Log file path (empty = no file logging)
+    SearchCriteria criteria;   ///< Search criteria and filters
 };
 
 /**

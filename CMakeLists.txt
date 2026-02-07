@@ -26,6 +26,7 @@ set(SOURCES
     src/thread_pool.cpp
     src/output_formatter.cpp
     src/command_line_parser.cpp
+    src/logger.cpp
 )
 
 # Header files
@@ -40,6 +41,7 @@ set(HEADERS
     include/thread_pool.h
     include/output_formatter.h
     include/command_line_parser.h
+    include/logger.h
 )
 
 # Main executable
@@ -72,6 +74,7 @@ add_executable(tests
     tests/test_ignore_patterns.cpp
     tests/test_thread_pool.cpp
     tests/test_output_formatter.cpp
+    tests/test_logger.cpp
     ${SOURCES}
 )
 

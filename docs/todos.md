@@ -78,14 +78,19 @@
   - [ ] 필터 실시간 조정
 
 ## Phase 6: 에러 처리 및 로깅
-- [ ] 예외 처리
-  - [ ] 파일 접근 권한 에러
-  - [ ] 심볼릭 링크 순환 참조
-  - [ ] 잘못된 입력 처리
-- [ ] 로깅 시스템
-  - [ ] 로그 레벨 (DEBUG, INFO, WARN, ERROR)
-  - [ ] 로그 파일 출력 옵션
-  - [ ] 상세 모드 (-v, -vv)
+- [x] 예외 처리
+  - [x] 파일 접근 권한 에러
+  - [x] 심볼릭 링크 순환 참조
+  - [x] 잘못된 입력 처리
+- [x] 로깅 시스템
+  - [x] Logger 클래스 (Singleton pattern, thread-safe)
+  - [x] 로그 레벨 (DEBUG, INFO, WARN, ERROR, NONE)
+  - [x] 로그 파일 출력 옵션 (--log-file)
+  - [x] 상세 모드 (-v for INFO, -v -v for DEBUG)
+  - [x] 타임스탬프 및 로그 레벨 포맷
+  - [x] FileScanner 및 main에 로깅 통합
+  - [x] 12 Logger unit tests
+  - [x] 10 logging integration tests (uc_logging.sh)
 
 ## Phase 7: 테스트
 - [ ] 유닛 테스트

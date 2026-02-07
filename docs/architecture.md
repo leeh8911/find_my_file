@@ -163,6 +163,62 @@ Find My Files (fmf)는 C++17 기반의 파일 검색 도구로, 명령줄 인터
 - 8가지 ANSI 색상 (Reset, Red, Green, Blue, Yellow, Cyan, Magenta, Gray)
 - 터미널 환경에 따라 활성화/비활성화 가능
 
+#### 9. Logger (`logger.h/cpp`)
+애플리케이션 전역 로깅을 제공하는 싱글톤 클래스
+
+**책임:**
+- 애플리케이션 전체에서 일관된 로깅 인터페이스 제공
+- 로그 레벨 필터링 (DEBUG/INFO/WARN/ERROR/NONE)
+- 콘솔 및 파일 출력 지원
+- 타임스탬프와 로그 레벨 포맷팅
+- 스레드 안전 로깅
+
+**디자인 패턴:**
+- Singleton: 전역 접근 가능한 단일 인스턴스
+- Thread-safe: std::mutex로 동기화
+
+**주요 메서드:**
+- `instance()`: 싱글톤 인스턴스 반환
+- `setLevel()`, `getLevel()`: 로그 레벨 설정/조회
+- `setLogFile()`: 로그 파일 경로 설정
+- `setConsoleOutput()`: 콘솔 출력 활성화/비활성화
+- `debug()`, `info()`, `warn()`, `error()`: 로그 메시지 출력
+- `flush()`, `close()`: 버퍼 플러시 및 파일 닫기
+
+**로그 레벨:**
+- DEBUG (0): 상세한 디버깅 정보 (-v -v)
+- INFO (1): 일반 정보 메시지 (-v)
+- WARN (2): 경고 메시지 (기본)
+- ERROR (3): 에러 메시지
+- NONE (4): 모든 로깅 비활성화
+
+**로그 형식:**
+```
+[YYYY-MM-DD HH:MM:SS.mmm] [LEVEL] message
+```
+
+**사용 예시:**
+```cpp
+auto& logger = Logger::instance();
+logger.setLevel(LogLevel::DEBUG);
+logger.setLogFile("app.log");
+logger.debug("Starting file scan");
+logger.info("Found " + std::to_string(count) + " files");
+logger.warn("Permission denied: " + path);
+logger.error("Failed to open file: " + path);
+```
+
+**통합:**
+- FileScanner: 디렉토리 접근 에러, 파일 처리 에러 로깅
+- main.cpp: 애플리케이션 라이프사이클, 설정 정보 로깅
+- CommandLineParser: 파라미터 파싱 및 검증 로깅 (예정)
+- ContentSearcher: 파일 읽기 에러 로깅 (예정)
+
+**CLI 옵션:**
+- `-v`: INFO 레벨 활성화
+- `-v -v`: DEBUG 레벨 활성화
+- `--log-file FILE`: 로그를 파일에 기록
+
 ## Data Flow
 
 ### Search Operation Flow
@@ -242,8 +298,10 @@ main.cpp
 - ContentSearcherTest: ContentSearcher 유틸리티 (6 tests)
 - IgnorePatternsTest: IgnorePatterns 클래스 (10 tests)
 - ThreadPoolTest: ThreadPool 병렬 실행 (12 tests)
+- OutputFormatterTest: OutputFormatter 출력 (10 tests)
+- LoggerTest: Logger 로깅 시스템 (12 tests)
 
-**Total: 57 unit tests**
+**Total: 81 unit tests**
 
 ### Integration Tests
 실제 파일 시스템 사용 시나리오 테스트:
@@ -252,8 +310,9 @@ main.cpp
 - uc_ignore_patterns.sh: 제외 패턴 (.gitignore) (4 tests)
 - uc_parallel_scan.sh: 병렬 스캔 성능 (4 tests)
 - uc_output_formats.sh: 출력 형식 테스트 (7 tests)
+- uc_logging.sh: 로깅 기능 테스트 (10 tests)
 
-**Total: 22 integration tests (5 test suites)**
+**Total: 32 integration tests (6 test suites)**
 
 ## Phase Implementation Status
 

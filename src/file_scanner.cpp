@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "content_searcher.h"
+#include "logger.h"
 #include "pattern_matcher.h"
 
 namespace fmf
@@ -41,6 +42,8 @@ SearchResult FileScanner::scanDirectory(const std::filesystem::path& dirPath)
                 }
                 catch (const std::exception& e)
                 {
+                    Logger::instance().warn("Error processing file " +
+                                            entry.path().string() + ": " + e.what());
                     std::cerr << "Error processing file " << entry.path()
                               << ": " << e.what() << std::endl;
                 }
@@ -49,6 +52,7 @@ SearchResult FileScanner::scanDirectory(const std::filesystem::path& dirPath)
     }
     catch (const std::filesystem::filesystem_error& e)
     {
+        Logger::instance().error("Error scanning directory: " + std::string(e.what()));
         std::cerr << "Error scanning directory: " << e.what() << std::endl;
     }
 
@@ -68,16 +72,19 @@ SearchResult FileScanner::scanDirectoryRecursive(
 
     if (!std::filesystem::exists(dirPath))
     {
+        Logger::instance().warn("Directory does not exist: " + dirPath.string());
         std::cerr << "Directory does not exist: " << dirPath << std::endl;
         return result;
     }
 
     if (!std::filesystem::is_directory(dirPath))
     {
+        Logger::instance().warn("Path is not a directory: " + dirPath.string());
         std::cerr << "Path is not a directory: " << dirPath << std::endl;
         return result;
     }
 
+    Logger::instance().debug("Starting recursive scan of: " + dirPath.string());
     scanRecursiveImpl(dirPath, 0, maxDepth, result);
     return result;
 }
@@ -134,6 +141,8 @@ void FileScanner::scanRecursiveImpl(const std::filesystem::path& dirPath,
             }
             catch (const std::exception& e)
             {
+                Logger::instance().warn("Error processing file " +
+                                        entry.path().string() + ": " + e.what());
                 std::cerr << "Error processing file " << entry.path() << ": "
                           << e.what() << std::endl;
             }
@@ -141,6 +150,8 @@ void FileScanner::scanRecursiveImpl(const std::filesystem::path& dirPath,
     }
     catch (const std::filesystem::filesystem_error& e)
     {
+        Logger::instance().error("Error scanning directory " + dirPath.string() +
+                                 ": " + std::string(e.what()));
         std::cerr << "Error scanning directory " << dirPath << ": " << e.what()
                   << std::endl;
     }

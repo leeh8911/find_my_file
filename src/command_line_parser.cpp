@@ -229,6 +229,20 @@ bool CommandLineParser::parseOption(const std::string& arg, int argc,
     {
         config.useColor = false;
     }
+    // Logging options
+    else if (arg == "-v" || arg == "--verbose")
+    {
+        config.verbosity++;  // Allow multiple -v for increased verbosity
+    }
+    else if (arg == "--log-file")
+    {
+        if (currentIndex + 1 >= argc)
+        {
+            std::cerr << "Error: --log-file requires a path argument\n";
+            return false;
+        }
+        config.logFile = argv[++currentIndex];
+    }
     // Target path (no flag)
     else if (arg[0] != '-')
     {
@@ -321,6 +335,8 @@ void CommandLineParser::printUsage(const char* programName) const
         << "  --format FORMAT      Output format: default, detailed, json\n"
         << "  --color              Enable colored output\n"
         << "  --no-color           Disable colored output\n"
+        << "  -v, --verbose        Increase verbosity (-v for info, -vv for debug)\n"
+        << "  --log-file FILE      Write logs to specified file\n"
         << "\nOther Options:\n"
         << "  -h, --help           Display this help message\n"
         << "\nExamples:\n"
