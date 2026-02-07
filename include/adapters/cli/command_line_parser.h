@@ -16,8 +16,8 @@
 #include <string>
 #include <vector>
 
-#include "domain/value_objects/search_criteria.h"
 #include "adapters/presenters/output_formatter.h"
+#include "domain/value_objects/search_criteria.h"
 
 namespace fmf
 {

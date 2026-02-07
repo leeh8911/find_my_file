@@ -14,9 +14,9 @@
 #include <memory>
 #include <vector>
 
-#include "domain/entities/semantic_result.h"
 #include "application/ports/mock_embedding_provider.h"
 #include "application/ports/mock_vector_store.h"
+#include "domain/entities/semantic_result.h"
 
 using namespace fmf;
 

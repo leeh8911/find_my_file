@@ -6,9 +6,9 @@
 #include <string>
 #include <vector>
 
-#include "domain/entities/semantic_result.h"
 #include "application/ports/i_embedding_provider.h"
 #include "application/ports/i_vector_store.h"
+#include "domain/entities/semantic_result.h"
 
 namespace fmf
 {

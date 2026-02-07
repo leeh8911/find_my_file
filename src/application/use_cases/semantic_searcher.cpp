@@ -7,9 +7,8 @@
 namespace fmf
 {
 
-SemanticSearcher::SemanticSearcher(
-    std::unique_ptr<IEmbeddingProvider> provider,
-    std::unique_ptr<IVectorStore> store)
+SemanticSearcher::SemanticSearcher(std::unique_ptr<IEmbeddingProvider> provider,
+                                   std::unique_ptr<IVectorStore> store)
     : provider_(std::move(provider)), store_(std::move(store)), nextId_(0)
 {
 }
@@ -46,8 +45,9 @@ bool SemanticSearcher::indexFile(const std::filesystem::path& filepath)
         metadata.filepath = filepath.string();
         metadata.chunkText = chunks[i];
         metadata.chunkIndex = i;
-        metadata.fileTimestamp =
-            std::filesystem::last_write_time(filepath).time_since_epoch().count();
+        metadata.fileTimestamp = std::filesystem::last_write_time(filepath)
+                                     .time_since_epoch()
+                                     .count();
 
         // Store in vector store
         std::string id = filepath.string() + "_chunk_" + std::to_string(i);
@@ -104,7 +104,7 @@ size_t SemanticSearcher::indexDirectory(const std::filesystem::path& dirpath,
 }
 
 std::vector<SemanticResult> SemanticSearcher::search(const std::string& query,
-                                                      size_t topK)
+                                                     size_t topK)
 {
     // Generate embedding for query
     auto queryEmbedding = provider_->generateEmbedding(query);
@@ -139,8 +139,8 @@ void SemanticSearcher::clear() { store_->clear(); }
 size_t SemanticSearcher::size() const { return store_->size(); }
 
 std::vector<std::string> SemanticSearcher::chunkText(const std::string& text,
-                                                      size_t chunkSize,
-                                                      size_t overlap)
+                                                     size_t chunkSize,
+                                                     size_t overlap)
 {
     std::vector<std::string> chunks;
 

@@ -1,10 +1,10 @@
 #ifndef MOCK_EMBEDDING_PROVIDER_H
 #define MOCK_EMBEDDING_PROVIDER_H
 
-#include "application/ports/i_embedding_provider.h"
-
 #include <string>
 #include <vector>
+
+#include "application/ports/i_embedding_provider.h"
 
 namespace fmf
 {

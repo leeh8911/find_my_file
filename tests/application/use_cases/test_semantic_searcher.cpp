@@ -43,8 +43,7 @@ class SemanticSearcherTest : public ::testing::Test
         std::filesystem::remove_all(testDir);
     }
 
-    void createTestFile(const std::string& filename,
-                        const std::string& content)
+    void createTestFile(const std::string& filename, const std::string& content)
     {
         std::ofstream file(testDir + "/" + filename);
         file << content;
@@ -113,7 +112,7 @@ TEST_F(SemanticSearcherTest, SearchByQuery)
 
     EXPECT_FALSE(results.empty());
     EXPECT_LE(results.size(), 2);
-    
+
     // Results should be sorted by relevance
     if (results.size() > 1)
     {

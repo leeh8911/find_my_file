@@ -443,6 +443,47 @@ Performance varies based on:
 
 Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+### Development Workflow (Important!)
+
+This project follows a **Phase-based branching model** with strict workflow rules.
+
+**📋 Before You Start:**
+1. Read [`.github/instructions/README.instructions.md`](.github/instructions/README.instructions.md) - Overview of all development rules
+2. Read [`docs/todos.md`](docs/todos.md) - Current work items and phases
+3. Read [`docs/architecture.md`](docs/architecture.md) - System design and structure
+
+**🔀 Branching Strategy:**
+```bash
+# 1. Find next phase from todos.md
+cat docs/todos.md | grep "Phase"
+
+# 2. Create or switch to phase branch
+git checkout -b phase/<phase-name>  # or git checkout phase/existing-phase
+
+# 3. Work on phase branch (NEVER on main for code)
+# - Write tests (test: commits)
+# - Implement features (feat: commits)
+# - Refactor (refactor: commits)
+# - Auto-commit and push after each step
+
+# 4. Merge when phase is complete
+git checkout main
+git merge phase/<phase-name>
+git push origin main
+```
+
+**⚠️ Critical Rules:**
+- ❌ **NEVER write code on `main` branch** (docs only)
+- ✅ Always work on `phase/<name>` branches
+- ✅ Follow TDD cycle: RED → GREEN → REFACTOR
+- ✅ Auto-commit after each meaningful unit
+- ✅ Auto-push immediately after commit
+
+**📚 Key Documentation:**
+- [`.github/instructions/workflow.instructions.md`](.github/instructions/workflow.instructions.md) - Complete workflow guide
+- [`.github/instructions/tdd-cycle.instructions.md`](.github/instructions/tdd-cycle.instructions.md) - TDD guidelines
+- [`.github/instructions/commit-style.instructions.md`](.github/instructions/commit-style.instructions.md) - Commit message format
+
 ### Development Setup
 
 ```bash
