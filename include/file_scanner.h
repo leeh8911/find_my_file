@@ -1,0 +1,109 @@
+#ifndef FILE_SCANNER_H
+#define FILE_SCANNER_H
+
+#include <filesystem>
+#include <functional>
+#include <string>
+
+#include "file_info.h"
+#include "search_criteria.h"
+#include "search_result.h"
+
+namespace fmf
+{
+
+/**
+ * @brief Scanner for traversing and searching files
+ */
+class FileScanner
+{
+ public:
+    /**
+     * @brief Default constructor
+     */
+    FileScanner() = default;
+
+    /**
+     * @brief Scan a directory non-recursively
+     * @param dirPath Path to the directory
+     * @return SearchResult containing found files
+     */
+    SearchResult scanDirectory(const std::filesystem::path& dirPath);
+
+    /**
+     * @brief Scan a directory recursively
+     * @param dirPath Path to the directory
+     * @param maxDepth Maximum depth to recurse (-1 for unlimited)
+     * @return SearchResult containing found files
+     */
+    SearchResult scanDirectoryRecursive(const std::filesystem::path& dirPath,
+                                        int maxDepth = -1);
+
+    /**
+     * @brief Scan with a custom filter predicate
+     * @param dirPath Path to the directory
+     * @param recursive Whether to scan recursively
+     * @param filter Function that returns true for files to include
+     * @return SearchResult containing filtered files
+     */
+    SearchResult scanWithFilter(const std::filesystem::path& dirPath,
+                                bool recursive,
+                                std::function<bool(const FileInfo&)> filter);
+
+    /**
+     * @brief Scan with search criteria
+     * @param dirPath Path to the directory
+     * @param recursive Whether to scan recursively
+     * @param criteria Search criteria to apply
+     * @param maxDepth Maximum depth for recursive scan (-1 for unlimited)
+     * @return SearchResult containing files matching the criteria
+     */
+    SearchResult search(const std::filesystem::path& dirPath, bool recursive,
+                        const SearchCriteria& criteria, int maxDepth = -1);
+
+    /**
+     * @brief Set whether to follow symbolic links
+     * @param follow true to follow symlinks, false to skip them
+     */
+    void setFollowSymlinks(bool follow) { followSymlinks_ = follow; }
+
+    /**
+     * @brief Get whether symbolic links are followed
+     * @return true if following symlinks, false otherwise
+     */
+    bool getFollowSymlinks() const { return followSymlinks_; }
+
+ private:
+    bool followSymlinks_ = false;
+
+    /**
+     * @brief Internal recursive scan implementation
+     * @param dirPath Current directory path
+     * @param currentDepth Current recursion depth
+     * @param maxDepth Maximum depth (-1 for unlimited)
+     * @param result SearchResult to accumulate files
+     */
+    void scanRecursiveImpl(const std::filesystem::path& dirPath,
+                           int currentDepth, int maxDepth,
+                           SearchResult& result);
+
+    /**
+     * @brief Check if a path should be processed
+     * @param path Path to check
+     * @return true if should be processed, false to skip
+     */
+    bool shouldProcess(const std::filesystem::path& path);
+
+    /**
+     * @brief Check if a FileInfo matches the search criteria
+     * @param fileInfo File to check
+     * @param criteria Criteria to match against
+     * @return true if matches, false otherwise
+     */
+    bool matchesCriteria(const FileInfo& fileInfo,
+                         const SearchCriteria& criteria);
+};
+
+}  // namespace fmf
+
+#endif  // FILE_SCANNER_H
