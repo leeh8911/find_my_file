@@ -16,13 +16,36 @@ option(ENABLE_LOCAL_EMBEDDING "Enable local embedding with ONNX Runtime" OFF)
 
 # Find ONNX Runtime (optional)
 if(ENABLE_LOCAL_EMBEDDING)
-    find_package(onnxruntime QUIET)
+    # Try to find ONNX Runtime via pkg-config or manual path
+    find_path(ONNXRUNTIME_INCLUDE_DIR
+        NAMES onnxruntime_cxx_api.h
+        PATHS
+            /usr/include/onnxruntime
+            /usr/local/include/onnxruntime
+            $ENV{HOME}/.local/include/onnxruntime
+            ${CMAKE_SOURCE_DIR}/third_party/onnxruntime/include
+    )
 
-    if(onnxruntime_FOUND)
-        message(STATUS "ONNX Runtime found - Local embedding enabled")
+    find_library(ONNXRUNTIME_LIB
+        NAMES onnxruntime
+        PATHS
+            /usr/lib
+            /usr/local/lib
+            $ENV{HOME}/.local/lib
+            ${CMAKE_SOURCE_DIR}/third_party/onnxruntime/lib
+    )
+
+    if(ONNXRUNTIME_INCLUDE_DIR AND ONNXRUNTIME_LIB)
+        message(STATUS "ONNX Runtime found")
+        message(STATUS "  Include: ${ONNXRUNTIME_INCLUDE_DIR}")
+        message(STATUS "  Library: ${ONNXRUNTIME_LIB}")
         add_compile_definitions(ENABLE_ONNX_RUNTIME)
+        include_directories(${ONNXRUNTIME_INCLUDE_DIR})
+        set(ONNX_RUNTIME_AVAILABLE TRUE)
     else()
         message(WARNING "ONNX Runtime not found - Local embedding will use placeholder implementation")
+        message(WARNING "  To enable: Install ONNX Runtime or set paths manually")
+        set(ONNX_RUNTIME_AVAILABLE FALSE)
     endif()
 endif()
 
@@ -91,6 +114,11 @@ add_executable(find_my_files
     ${SOURCES}
 )
 
+# Link ONNX Runtime if available
+if(ENABLE_LOCAL_EMBEDDING AND ONNX_RUNTIME_AVAILABLE)
+    target_link_libraries(find_my_files ${ONNXRUNTIME_LIB})
+endif()
+
 # Google Test
 include(FetchContent)
 FetchContent_Declare(
@@ -137,6 +165,11 @@ target_link_libraries(tests
     GTest::gtest_main
     pthread
 )
+
+# Link ONNX Runtime to tests if available
+if(ENABLE_LOCAL_EMBEDDING AND ONNX_RUNTIME_AVAILABLE)
+    target_link_libraries(tests ${ONNXRUNTIME_LIB})
+endif()
 
 include(GoogleTest)
 gtest_discover_tests(tests)
