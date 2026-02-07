@@ -10,8 +10,8 @@ namespace fmf
 {
 
 bool ContentSearcher::searchInFile(const std::filesystem::path& filePath,
-                                  const std::string& pattern, bool useRegex,
-                                  bool caseSensitive)
+                                   const std::string& pattern, bool useRegex,
+                                   bool caseSensitive)
 {
     // Check if file exists and is a regular file
     if (!std::filesystem::exists(filePath) ||
@@ -66,11 +66,11 @@ bool ContentSearcher::searchInFile(const std::filesystem::path& filePath,
             if (!caseSensitive)
             {
                 std::transform(searchLine.begin(), searchLine.end(),
-                             searchLine.begin(),
-                             [](unsigned char c) { return std::tolower(c); });
+                               searchLine.begin(),
+                               [](unsigned char c) { return std::tolower(c); });
                 std::transform(searchPattern.begin(), searchPattern.end(),
-                             searchPattern.begin(),
-                             [](unsigned char c) { return std::tolower(c); });
+                               searchPattern.begin(),
+                               [](unsigned char c) { return std::tolower(c); });
             }
 
             if (searchLine.find(searchPattern) != std::string::npos)
@@ -102,7 +102,6 @@ bool ContentSearcher::isTextFile(const std::filesystem::path& filePath)
     }
 
     // Check for null bytes and non-printable characters
-    int nullBytes = 0;
     int nonPrintable = 0;
 
     for (std::streamsize i = 0; i < bytesRead; ++i)
@@ -111,7 +110,8 @@ bool ContentSearcher::isTextFile(const std::filesystem::path& filePath)
 
         if (c == 0)
         {
-            nullBytes++;
+            // Null bytes are a strong indicator of binary files
+            return false;
         }
         else if (c < 32 && c != '\n' && c != '\r' && c != '\t')
         {
@@ -119,11 +119,10 @@ bool ContentSearcher::isTextFile(const std::filesystem::path& filePath)
         }
     }
 
-    // If more than 10% null bytes or non-printable, likely binary
-    double nullRatio = static_cast<double>(nullBytes) / bytesRead;
+    // If more than 10% non-printable, likely binary
     double nonPrintableRatio = static_cast<double>(nonPrintable) / bytesRead;
 
-    return nullRatio < 0.1 && nonPrintableRatio < 0.3;
+    return nonPrintableRatio < 0.1;
 }
 
 }  // namespace fmf

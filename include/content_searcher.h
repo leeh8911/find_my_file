@@ -22,12 +22,12 @@ class ContentSearcher
      * @return true if pattern found in file, false otherwise
      */
     static bool searchInFile(const std::filesystem::path& filePath,
-                            const std::string& pattern, bool useRegex = false,
-                            bool caseSensitive = true);
+                             const std::string& pattern, bool useRegex = false,
+                             bool caseSensitive = true);
 
     /**
      * @brief Check if a file is likely to be a text file
-     * @param filePath Path to the file  
+     * @param filePath Path to the file
      * @return true if file appears to be text, false otherwise
      */
     static bool isTextFile(const std::filesystem::path& filePath);

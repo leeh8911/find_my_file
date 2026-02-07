@@ -43,7 +43,7 @@ class PatternMatcher
      * @throws std::regex_error if the pattern is invalid
      */
     static bool matchRegex(const std::string& regexPattern,
-                          const std::string& text, bool caseSensitive = true);
+                           const std::string& text, bool caseSensitive = true);
 
  private:
     /**

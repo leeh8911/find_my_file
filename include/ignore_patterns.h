@@ -64,7 +64,7 @@ class IgnorePatterns
      * @return true if matches, false otherwise
      */
     bool matchesPattern(const std::string& pattern,
-                       const std::filesystem::path& path) const;
+                        const std::filesystem::path& path) const;
 };
 
 }  // namespace fmf

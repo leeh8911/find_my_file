@@ -62,7 +62,7 @@ bool IgnorePatterns::shouldIgnore(const std::filesystem::path& path) const
 }
 
 bool IgnorePatterns::matchesPattern(const std::string& pattern,
-                                   const std::filesystem::path& path) const
+                                    const std::filesystem::path& path) const
 {
     std::string pathStr = path.string();
     std::string filename = path.filename().string();
