@@ -139,6 +139,30 @@ Find My Files (fmf)는 C++17 기반의 파일 검색 도구로, 명령줄 인터
 - std::atomic으로 활성 작업 추적
 - RAII 기반 스레드 관리 (소멸자에서 대기)
 
+#### 9. OutputFormatter (`output_formatter.h/cpp`) - Phase 5
+검색 결과의 출력 형식을 관리하는 클래스
+
+**책임:**
+- 3가지 출력 형식 제공 (Default, Detailed, JSON)
+- ANSI 컬러 코드 관리
+- 파일 크기 포맷팅 (B/KB/MB/GB/TB)
+- 날짜/시간 ISO 8601 포맷팅
+
+**주요 메서드:**
+- `print()`: SearchResult 출력 (형식에 따라 분기)
+- `setFormat()`: 출력 형식 설정
+- `setUseColor()`: 컬러 사용 여부 설정
+- `colorCode()`: ANSI 컬러 코드 반환
+
+**출력 형식:**
+- Default: 간결한 리스트 (`[TYPE] SIZE PATH`)
+- Detailed: 전체 메타데이터 (경로, 타입, 크기, 수정 시간)
+- JSON: 구조화된 출력 (`{"count": N, "files": [...]}`)
+
+**컬러 지원:**
+- 8가지 ANSI 색상 (Reset, Red, Green, Blue, Yellow, Cyan, Magenta, Gray)
+- 터미널 환경에 따라 활성화/비활성화 가능
+
 ## Data Flow
 
 ### Search Operation Flow
@@ -169,8 +193,9 @@ main.cpp
   │  ├─ SearchResult
   │  ├─ PatternMatcher
   │  ├─ ContentSearcher
-  │  └─ IgnorePatterns
-  └─ 출력 포맷팅
+  │  ├─ IgnorePatterns
+  │  └─ ThreadPool
+  └─ OutputFormatter → 결과 출력
 ```
 
 ## Design Patterns
@@ -226,8 +251,9 @@ main.cpp
 - uc_content_search.sh: 파일 내용 검색 (4 tests)
 - uc_ignore_patterns.sh: 제외 패턴 (.gitignore) (4 tests)
 - uc_parallel_scan.sh: 병렬 스캔 성능 (4 tests)
+- uc_output_formats.sh: 출력 형식 테스트 (7 tests)
 
-**Total: 15 integration tests**
+**Total: 22 integration tests (5 test suites)**
 
 ## Phase Implementation Status
 
@@ -253,10 +279,18 @@ main.cpp
 - CLI 스레드 개수 옵션 (-j, --threads)
 - 성능 벤치마크 테스트
 
+### Phase 5: CLI 개선 ✅
+- OutputFormatter 클래스 (3가지 출력 형식)
+- Default format: 간결한 리스트 출력
+- Detailed format: 전체 메타데이터 출력
+- JSON format: 구조화된 기계 판독 가능 출력
+- ANSI 컬러 지원 (--color, --no-color)
+- CLI 옵션 (--format default|detailed|json)
+- 7개 통합 테스트 (uc_output_formats.sh)
+
 ### Upcoming Phases
-- **Phase 5**: CLI 개선 (컬러 출력, 진행률 표시, JSON 출력)
-- **Phase 6**: 추가 기능 (심볼릭 링크 처리, 중복 파일 검색)
-- **Phase 7**: 성능 테스트 및 벤치마크
+- **Phase 6**: 에러 처리 및 로깅
+- **Phase 7**: 추가 테스트 및 커버리지
 - **Phase 8**: 문서화 및 사용자 가이드
 - **Phase 9**: 배포 준비 (패키징, 설치 스크립트)
 
@@ -401,6 +435,23 @@ find_my_files/
 - ✅ Date range filtering
 - ✅ 45 unit tests, 11 integration tests
 
+### v0.5.0 (Phase 5) - CLI Improvements
+- ✅ OutputFormatter class with 3 output formats
+- ✅ Default format: compact file listing
+- ✅ Detailed format: full metadata per file
+- ✅ JSON format: machine-readable output
+- ✅ ANSI color support (--color/--no-color)
+- ✅ CLI options: --format (default/detailed/json)
+- ✅ 69 unit tests, 16 integration tests (5 test suites)
+
+### v0.4.0 (Phase 4) - Multi-threading
+- ✅ ThreadPool class for parallel task execution
+- ✅ Thread-safe SearchResult with mutex
+- ✅ Parallel directory scanning
+- ✅ CLI option: -j/--threads
+- ✅ Performance: ~3x speedup on large directories
+- ✅ 57 unit tests, 15 integration tests
+
 ### v0.2.0 (Phase 2)
 - ✅ Wildcard pattern matching
 - ✅ Extension filtering
@@ -412,3 +463,4 @@ find_my_files/
 - ✅ Directory traversal
 - ✅ File metadata reading
 - ✅ CMake build system
+
