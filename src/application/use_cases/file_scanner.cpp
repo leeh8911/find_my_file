@@ -3,8 +3,8 @@
 #include <iostream>
 
 #include "application/services/content_searcher.h"
-#include "infrastructure/logging/logger.h"
 #include "application/services/pattern_matcher.h"
+#include "infrastructure/logging/logger.h"
 
 namespace fmf
 {
