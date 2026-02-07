@@ -192,14 +192,206 @@
   - [ ] [semantic] 섹션
   - [ ] embedding_provider, model, api_key_env
 
+### 11. Multimodal Document Support (architecture.md 기반 확장)
+> **목표**: 다양한 파일 포맷(PDF, PPTX, DOCX, HWP, 이미지, 영상)을 텍스트로 변환하여 단일 embedding 모델로 검색 지원.
+> 
+> **핵심 전략**: 모든 파일 타입 → 텍스트 변환 → Chunking → Text Embedding → Vector Index
+> 
+> **참고**: architecture.md의 "Multimodal Document Embedding Pipeline" 섹션 참조
+
+#### 11.1. PDF 파일 지원
+- [ ] PDF 파서 구현
+  - [ ] 라이브러리 선택: pdfium 또는 poppler
+  - [ ] CMake 통합 (-DENABLE_PDF_SUPPORT=ON)
+  - [ ] PDFExtractor 클래스
+    * extractText(filepath) → string
+    * extractMetadata() → PDFMetadata (페이지 수, 저자, 제목)
+  - [ ] 페이지별 chunking 전략
+  - [ ] OCR 지원 (선택적, tesseract)
+- [ ] 단위 테스트
+  - [ ] 텍스트 추출 정확도
+  - [ ] 메타데이터 파싱
+- [ ] 통합 테스트
+  - [ ] 실제 PDF 파일 검색
+
+#### 11.2. PPTX/PPT 파일 지원
+- [ ] PPTX 파서 구현
+  - [ ] 라이브러리 선택: libreoffice API 또는 python-pptx (Python 바인딩)
+  - [ ] CMake 통합 (-DENABLE_PPTX_SUPPORT=ON)
+  - [ ] PPTXExtractor 클래스
+    * extractText(filepath) → string (슬라이드별 텍스트)
+    * extractNotes() → string (발표자 노트)
+    * extractMetadata() → PPTXMetadata
+  - [ ] 슬라이드별 chunking
+  - [ ] 이미지 슬라이드 처리 (VLM 캡션)
+- [ ] 단위 테스트
+- [ ] 통합 테스트
+
+#### 11.3. DOCX 파일 지원
+- [ ] DOCX 파서 구현
+  - [ ] 라이브러리: libxml2 (OOXML 파싱)
+  - [ ] CMake 통합 (-DENABLE_DOCX_SUPPORT=ON)
+  - [ ] DOCXExtractor 클래스
+    * extractText(filepath) → string
+    * extractHeadings() → vector<string> (구조 정보)
+    * extractMetadata() → DOCXMetadata
+  - [ ] 문단/섹션별 chunking
+  - [ ] 표/차트 처리 (텍스트 변환)
+- [ ] 단위 테스트
+- [ ] 통합 테스트
+
+#### 11.4. HWP 파일 지원 (한글 문서)
+- [ ] HWP 파서 구현
+  - [ ] 라이브러리: hwp5 (Python 기반) 또는 pyhwp
+  - [ ] CMake 통합 (-DENABLE_HWP_SUPPORT=ON)
+  - [ ] HWPExtractor 클래스
+    * extractText(filepath) → string
+    * extractMetadata() → HWPMetadata
+  - [ ] 한글 인코딩 처리 (UTF-8 변환)
+- [ ] 단위 테스트
+- [ ] 통합 테스트
+
+#### 11.5. 이미지 파일 지원 (VLM 기반)
+- [ ] 이미지 캡션 생성
+  - [ ] VLM 통합: CLIP, BLIP, LLaVA, GPT-4V (선택)
+  - [ ] CMake 통합 (-DENABLE_IMAGE_CAPTION=ON)
+  - [ ] ImageCaptioner 클래스
+    * generateCaption(imagePath) → string (설명 텍스트)
+    * generateDetailedDescription(imagePath) → string (상세 설명)
+  - [ ] 이미지 → 설명 텍스트 → Embedding
+  - [ ] 로컬 VLM 모델 (ONNX 또는 llama.cpp)
+- [ ] 지원 포맷: JPEG, PNG, GIF, BMP, WEBP, TIFF
+- [ ] 메타데이터 저장
+  - [ ] 원본 이미지 경로
+  - [ ] 캡션 생성 모델 버전
+  - [ ] 생성 시각
+- [ ] 단위 테스트
+- [ ] 통합 테스트
+
+#### 11.6. 영상 파일 지원 (STT 기반)
+- [ ] 영상 텍스트 추출
+  - [ ] 자막 추출 (SRT, VTT 파일)
+  - [ ] STT (Speech-to-Text): Whisper, Google Speech API
+  - [ ] CMake 통합 (-DENABLE_VIDEO_SUPPORT=ON)
+  - [ ] VideoTranscriber 클래스
+    * extractSubtitles(videoPath) → string
+    * transcribeAudio(videoPath) → string (Whisper)
+    * extractMetadata() → VideoMetadata (길이, 해상도, 코덱)
+  - [ ] FFmpeg 통합 (오디오 추출)
+- [ ] 지원 포맷: MP4, AVI, MKV, MOV, WEBM
+- [ ] Chunking 전략
+  - [ ] 타임스탬프 기반 chunking (30초 단위)
+  - [ ] 자막 문장 단위 chunking
+- [ ] 메타데이터 저장
+  - [ ] 원본 영상 경로
+  - [ ] 타임스탬프 정보
+  - [ ] STT 모델 버전
+- [ ] 단위 테스트
+- [ ] 통합 테스트
+
+#### 11.7. Unified Text Extractor (팩토리 패턴)
+- [ ] TextExtractorFactory 클래스
+  - [ ] createExtractor(fileType) → ITextExtractor*
+  - [ ] 파일 확장자 기반 자동 선택
+- [ ] ITextExtractor 인터페이스
+  - [ ] extractText(filepath) → string
+  - [ ] extractMetadata() → Metadata
+  - [ ] getSupportedFormats() → vector<string>
+- [ ] 구현체
+  - [ ] PDFExtractor, PPTXExtractor, DOCXExtractor, HWPExtractor
+  - [ ] ImageCaptioner, VideoTranscriber
+  - [ ] PlainTextExtractor (기본 텍스트 파일)
+- [ ] 단위 테스트
+
+#### 11.8. Enhanced Chunking (Multimodal용)
+- [ ] Advanced Chunking 전략
+  - [ ] PageChunker (PDF 페이지 단위)
+  - [ ] SlideChunker (PPTX 슬라이드 단위)
+  - [ ] ParagraphChunker (DOCX 문단 단위)
+  - [ ] SemanticChunker (의미 기반 분할, LLM 활용)
+  - [ ] TimestampChunker (영상 타임스탬프 기반)
+- [ ] Chunking 옵션
+  - [ ] Chunk size (기본 512 토큰)
+  - [ ] Overlap (기본 50 토큰)
+  - [ ] Metadata preservation (문서 구조 정보)
+- [ ] 단위 테스트
+
+#### 11.9. Metadata Versioning & Re-indexing
+- [ ] DescriptorVersioning 시스템
+  - [ ] EmbeddingDescriptor 구조체
+    * embedding_version: string (e.g., "v1.0")
+    * encoder_type: string (e.g., "all-MiniLM-L6-v2")
+    * dimension: size_t (e.g., 384)
+    * normalization: bool
+    * extractor_versions: map<string, string> (파서 버전)
+  - [ ] metadata.json 저장 (.fmf_index/)
+- [ ] Re-indexing 전략
+  - [ ] 모델 변경 감지 (버전 비교)
+  - [ ] 선택적 재인덱싱 (변경된 파일만)
+  - [ ] 배치 재인덱싱 (백그라운드)
+- [ ] CLI 옵션
+  - [ ] --check-index-version
+  - [ ] --rebuild-index-full
+  - [ ] --migrate-index OLD_VERSION NEW_VERSION
+- [ ] 단위 테스트
+- [ ] 통합 테스트
+
+#### 11.10. LLM/VLM Role Separation
+- [ ] LLM/VLM 역할 정의
+  - [ ] **LLM 역할**: 쿼리 확장, 요약, 설명 생성 (검색 전/후 처리)
+  - [ ] **VLM 역할**: 이미지 캡션 생성 (텍스트 변환)
+  - [ ] **Embedding 모델 역할**: 벡터 생성 (검색 전용)
+- [ ] 인터페이스 분리
+  - [ ] ILLMProvider: generateSummary(), expandQuery()
+  - [ ] IVLMProvider: generateCaption()
+  - [ ] IEmbeddingProvider: generateEmbedding() (기존)
+- [ ] 구현 예제
+  - [ ] OpenAI GPT-4 (LLM)
+  - [ ] OpenAI GPT-4V (VLM)
+  - [ ] Local: llama.cpp (LLM), CLIP (VLM)
+
+#### 11.11. CLI 통합 (Multimodal Search)
+- [ ] CommandLineParser 확장
+  - [ ] --file-types PDF,PPTX,DOCX,HWP,IMG,VIDEO (필터)
+  - [ ] --enable-ocr (PDF OCR)
+  - [ ] --enable-image-caption (이미지 캡션 생성)
+  - [ ] --enable-video-transcription (영상 STT)
+- [ ] IndexingOptions 구조체
+  - [ ] enabledFileTypes
+  - [ ] ocrEnabled
+  - [ ] imageCaptionEnabled
+  - [ ] videoTranscriptionEnabled
+- [ ] 통합 테스트
+
+#### 11.12. 문서화 및 예제
+- [ ] README.md 업데이트
+  - [ ] Multimodal Search 섹션
+  - [ ] 지원 파일 포맷 목록
+  - [ ] 설치 가이드 (PDF/PPTX/DOCX/HWP 라이브러리)
+- [ ] examples/multimodal_search_demo.sh
+- [ ] architecture.md 동기화
+  - [ ] 구현 완료 시 실제 클래스 다이어그램 업데이트
+
 ### Phase 10 Definition of Done
-- [ ] 모든 단위 테스트 통과
-- [ ] 모든 통합 테스트 통과
-- [ ] SOLID 원칙 준수
-- [ ] clang-format / clang-tidy / cpplint 통과
-- [ ] Architecture.md 업데이트 완료
-- [ ] README.md 업데이트 완료
-- [ ] 성능 벤치마크 결과 문서화
+- [ ] **Core Semantic Search**
+  - [ ] 모든 단위 테스트 통과
+  - [ ] 모든 통합 테스트 통과
+  - [ ] FAISS VectorStore 구현
+  - [ ] LocalEmbeddingProvider ONNX 통합
+  - [ ] CLI 통합 완료
+- [ ] **Multimodal Support** (Phase 10.11)
+  - [ ] PDF, PPTX, DOCX, HWP 파서 구현
+  - [ ] 이미지 캡션 (VLM) 구현
+  - [ ] 영상 STT 구현
+  - [ ] Metadata versioning 시스템
+  - [ ] Multimodal 통합 테스트 통과
+- [ ] **Code Quality**
+  - [ ] SOLID 원칙 준수
+  - [ ] clang-format / clang-tidy / cpplint 통과
+- [ ] **Documentation**
+  - [ ] Architecture.md 동기화 완료
+  - [ ] README.md 업데이트 완료
+  - [ ] 성능 벤치마크 결과 문서화
 
 ---
 
@@ -521,7 +713,11 @@ Everything 스타일의 빠르고 직관적인 데스크톱 GUI 제공. CLI와 D
 - **커밋**: def98a3, 5880b17
 
 ### 다음 작업 우선순위
-1. **Phase 10 완료** 🔴 (FAISS VectorStore, OpenAI Provider, CLI 통합)
+1. **Phase 10 완료** 🔴 
+   - ONNX 통합 (LocalEmbeddingProvider 실제 추론)
+   - FAISS VectorStore 구현
+   - CLI 통합 (--semantic-search, --similar)
+   - Multimodal 파서 (PDF, PPTX, DOCX, 선택적)
 2. **Phase 12 구현** (Qt GUI - Everything UI 스타일)
 3. **Phase 4 나머지** (캐싱, 메모리 최적화, 조기 종료)
 
@@ -538,47 +734,25 @@ Everything 스타일의 빠르고 직관적인 데스크톱 GUI 제공. CLI와 D
 
 ### 향후 예상 추가
 
-#### Phase 10 (Semantic Search) 완료 시
-- 예상 코드: +2,000 라인 (SemanticSearcher, Providers, VectorStore)
-- 예상 테스트: +30 단위 테스트, +10 통합 테스트
-- 예상 외부 의존성: FAISS, libcurl, JSON library
-- 예상 완료율: 85%
+#### Phase 10 (Semantic Search + Multimodal) 완료 시
+- **예상 코드**: 
+  - Core Semantic Search: +2,000 라인
+  - Multimodal Support: +1,500 라인
+  - **총 +3,500 라인**
+- **예상 테스트**: 
+  - +50 단위 테스트
+  - +20 통합 테스트
+- **예상 외부 의존성**: 
+  - Core: FAISS, ONNX Runtime, JSON library
+  - Multimodal: pdfium/poppler, libxml2, hwp5, FFmpeg, Whisper, VLM (CLIP/BLIP)
+- **예상 완료율**: 90% (Multimodal 지원 포함)
 
 #### Phase 12 (GUI Implementation) 완료 시
-- 예상 코드: +3,500 라인 (Everything UI 스타일 GUI)
-- 예상 테스트: +25 단위 테스트, +15 QTest 통합 테스트
-- 예상 외부 의존성: Qt 6 (Core, Widgets, Concurrent)
-- 예상 완료율: 98% (거의 완전한 제품)
+- **예상 코드**: +3,500 라인 (Everything UI 스타일 GUI)
+- **예상 테스트**: +25 단위 테스트, +15 QTest 통합 테스트
+- **예상 외부 의존성**: Qt 6 (Core, Widgets, Concurrent)
+- **예상 완료율**: 98% (거의 완전한 제품)
 
----
-
-**마지막 업데이트**: 2026-02-07
-
-
-### 프로젝트 통계
-- **완료율**: ~75% (핵심 검색 기능 완성, Semantic Search 기반 완료, GUI 설계 완료)
-- **총 코드**: ~4,300 라인 (헤더 + 구현)
-- **총 테스트**: 114 단위 테스트 + 40 통합 테스트 = 154 테스트
-- **테스트 통과율**: 100%
-- **아키텍처**: Clean Architecture 4계층 구조 (Domain, Application, Adapters, Infrastructure)
-
-### 다음 작업 우선순위
-1. **Phase 10 완료** 🔴 (FAISS VectorStore, OpenAI Provider, CLI 통합)
-2. **Phase 12 구현** (Qt GUI - Everything UI 스타일)
-3. **Phase 4 나머지** (캐싱, 메모리 최적화, 조기 종료)
-
-### 완료된 Phase 목록
-#### Phase 10 (Semantic Search)
-- 예상 코드: +2,000 라인 (SemanticSearcher, Providers, VectorStore)
-- 예상 테스트: +30 단위 테스트, +10 통합 테스트
-- 예상 외부 의존성: FAISS, libcurl, JSON library
-- 예상 완료율: 95% (Phase 10 완료 시)
-
-#### Phase 12 (GUI Implementation)
-- 예상 코드: +3,500 라인 (Everything UI 스타일 GUI)
-- 예상 테스트: +25 단위 테스트, +15 QTest 통합 테스트
-- 예상 외부 의존성: Qt 6 (Core, Widgets, Concurrent)
-- 예상 완료율: 98% (Phase 12 완료 시, 거의 완전한 제품)
 ---
 
 **마지막 업데이트**: 2026-02-07
