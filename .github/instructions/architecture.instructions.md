@@ -8,7 +8,43 @@
 
 본 프로젝트는 **SOLID 원칙**을 기반으로 설계된다.
 
-모든 아키텍처 결정은 `docs/architecture.md`에 문서화되어야 한다.
+아키텍처 결정(요약)은 `docs/architecture.md` 또는 별도 ADR 문서에 기록한다.
+
+아키텍처 설계 방법론(원칙, 패턴, 의존성/데이터 흐름 등)은 본 문서에 통합되어 있으며,\n+코드의 **실제 구조(파일 배치, 컴포넌트 위치)**는 `docs/architecture.md`에서 확인한다.
+
+---
+
+## Clean Architecture Principles
+
+### Dependency Rule
+**핵심 규칙: 의존성은 항상 안쪽(내부)을 향해야 한다.**
+
+```
+Infrastructure → Adapters → Application → Domain
+(바깥)                                    (안쪽)
+```
+
+- 외부 레이어는 내부 레이어에 의존 가능
+- 내부 레이어는 외부 레이어를 알 수 없음
+- Domain은 어떤 레이어에도 의존하지 않음
+
+### Layer Structure (Conceptual)
+
+```
+┌──────────────────────────────────────────┐
+│     Infrastructure Layer                 │  ← Frameworks, Drivers, Tools
+│  (Logger, ThreadPool, ConfigFile)        │
+├──────────────────────────────────────────┤
+│     Interface Adapters Layer             │  ← Controllers, Presenters
+│  (CommandLineParser, OutputFormatter)    │
+├──────────────────────────────────────────┤
+│     Application Layer                    │  ← Use Cases, Services
+│  (FileScanner, SemanticSearcher)         │
+├──────────────────────────────────────────┤
+│     Domain Layer                         │  ← Entities, Value Objects
+│  (FileInfo, SearchCriteria)              │
+└──────────────────────────────────────────┘
+```
 
 ---
 
@@ -217,6 +253,120 @@ private:
 3. **Domain → Abstractions**: ✅ 필수
 4. **Infrastructure → Abstractions**: ✅ 필수 (구현)
 5. **Domain은 프레임워크에 의존하지 않음**
+
+---
+
+## Dependency Flow (Detailed)
+
+```
+main.cpp (최외곽 - 의존성 조립)
+    ↓
+Infrastructure Layer
+    ├─ Logger
+    ├─ ConfigFile → ApplicationConfig
+    ├─ ThreadPool
+    └─ Providers (MockEmbeddingProvider, MockVectorStore)
+    ↓
+Adapters Layer
+    ├─ CommandLineParser → ApplicationConfig (DTO)
+    │   └─ SearchCriteria (Domain VO)
+    └─ OutputFormatter
+        └─ SearchResult (Domain Entity)
+    ↓
+Application Layer
+    ├─ Use Cases
+    │   ├─ FileScanner
+    │   │   ├─ Services: PatternMatcher, ContentSearcher, IgnorePatterns
+    │   │   ├─ Domain: FileInfo, SearchResult, SearchCriteria
+    │   │   └─ Infrastructure: ThreadPool (optional, DI)
+    │   └─ SemanticSearcher
+    │       ├─ Ports: IEmbeddingProvider, IVectorStore
+    │       └─ Domain: SemanticResult, FileInfo
+    ├─ Services
+    │   ├─ PatternMatcher
+    │   ├─ ContentSearcher
+    │   └─ IgnorePatterns
+    └─ Ports (interfaces only)
+        ├─ IEmbeddingProvider
+        └─ IVectorStore
+    ↓
+Domain Layer (의존성 없음)
+    ├─ Entities
+    │   ├─ FileInfo
+    │   ├─ SearchResult
+    │   └─ SemanticResult
+    └─ Value Objects
+        └─ SearchCriteria
+```
+
+### Key Dependency Inversions
+1. **FileScanner → ThreadPool**
+   - ThreadPool은 생성자/setter로 주입 (DI)
+   - ThreadPool 없이도 순차 스캔 동작 가능
+
+2. **SemanticSearcher → IEmbeddingProvider/IVectorStore**
+   - 구현체가 아닌 Port(인터페이스)에 의존
+   - 구현체는 Infrastructure Layer에 위치
+   - Mock 구현으로 테스트 가능
+
+3. **Use Cases → Domain**
+   - Use Cases는 Domain Entities/VOs만 조작
+   - Domain은 Use Cases를 알 수 없음
+
+---
+
+## Data Flow
+
+### Traditional Search Flow
+```
+1. main()
+   ├─ ConfigFile::loadDefault() → defaultConfig (옵션)
+   ├─ CommandLineParser::parse(argc, argv, defaultConfig)
+   │   └─ ApplicationConfig 생성
+   │       └─ SearchCriteria 포함
+   └─ Logger::instance().setLevel(config.verbosity)
+
+2. FileScanner 초기화 (Use Case)
+   ├─ SearchCriteria 설정
+   ├─ IgnorePatterns 로드 (옵션)
+   └─ ThreadPool 주입 (DI, 옵션)
+
+3. FileScanner::search(directory, criteria)
+   ├─ scan() / scanRecursive()
+   │   ├─ shouldProcess() → IgnorePatterns 체크
+   │   └─ matchesCriteria() → 필터링
+   │       ├─ PatternMatcher::matchWildcard/matchRegex()
+   │       ├─ 크기/날짜 범위 체크
+   │       └─ ContentSearcher::searchInFile() (옵션)
+   └─ SearchResult 반환
+
+4. 정렬 (옵션)
+   └─ SearchResult::sortByName/Size/Date()
+
+5. 출력
+   └─ OutputFormatter::print(searchResult)
+```
+
+### Semantic Search Flow
+```
+1. main() → semantic search 옵션 감지
+
+2. SemanticSearcher 초기화 (Use Case)
+   ├─ EmbeddingProvider 주입 (DI, Port)
+   └─ VectorStore 주입 (DI, Port)
+
+3. Index 확인
+   ├─ VectorStore::load(.fmf_index/) → 실패 시 인덱싱
+   └─ 오래된 파일 확인 → 재인덱싱
+
+4. SemanticSearcher::search(query, topK)
+   ├─ EmbeddingProvider::generateEmbedding(query) → queryVector
+   ├─ VectorStore::search(queryVector, topK) → vector<SemanticResult>
+   └─ (옵션) Hybrid: ContentSearcher 결과와 병합
+
+5. 출력
+   └─ OutputFormatter::print(results with relevance score)
+```
 
 ---
 
@@ -440,6 +590,104 @@ Before creating a new component, verify:
 3. **LSP**: 자식 클래스가 부모 클래스를 완전히 대체할 수 있는가?
 4. **ISP**: 클라이언트가 사용하지 않는 메서드에 의존하는가?
 5. **DIP**: 고수준 모듈이 구체적인 구현에 의존하는가?
+
+---
+
+## Technology Stack
+
+### Core Technologies
+- **Language**: C++17
+- **Build System**: CMake 3.14+
+- **Standard Library**: STL (`std::filesystem`, `std::regex`, `std::optional`)
+
+### Testing
+- **Framework**: Google Test (gtest)
+- **Unit Tests**: Domain / Application / Adapters / Infrastructure
+- **Integration Tests**: bash scripts 기반 시나리오 테스트
+
+### Development Tools
+- **Code Style**: clang-format
+- **Static Analysis**: clang-tidy, cpplint
+- **Compiler Flags**: `-Wall -Wextra -Wpedantic -Werror`
+
+---
+
+## Testing Strategy
+
+### Unit Tests by Layer (예시 분류)
+- Domain: `FileInfo`, `SearchResult`, `SearchCriteria`
+- Application: `PatternMatcher`, `ContentSearcher`, `IgnorePatterns`, `FileScanner`, `SemanticSearcher`
+- Adapters: `CommandLineParser`, `OutputFormatter`
+- Infrastructure: `Logger`, `ConfigFile`, `ThreadPool`
+
+### Integration Tests
+- CLI 시나리오 기반 테스트(`test/integrationtest/*.sh`)
+- 검색/필터/출력/로깅/설정 파일 등의 end-to-end 검증
+
+---
+
+## Migration Plan (Architecture Refactoring)
+
+### 목표
+현재 flat 구조를 Clean Architecture 기반 계층 구조로 리팩터링
+
+### 작업 범위
+1. 폴더 구조 재편성
+2. CMakeLists.txt 업데이트 (include path 변경)
+3. `#include` 경로 수정
+4. 테스트 파일 이동 및 재편성
+5. 문서 업데이트
+
+### 이동 계획 (요약)
+- Domain, Application, Adapters, Infrastructure 별로 `include/` 및 `src/` 재배치
+- 테스트도 계층별 디렉터리로 분리
+- 상세 경로는 `docs/architecture.md`가 아닌 계획 문서에서 관리
+
+### 검증 단계
+1. 각 단계 완료 후 빌드 성공 확인
+2. 단위/통합 테스트 통과
+3. 정적 분석 도구 통과
+
+---
+
+## Performance Considerations
+- **멀티스레드 스캔**: ThreadPool 기반 병렬 디렉터리 검색
+- **메모리 효율**: 라인 단위 파일 읽기, 10MB 제한
+- **패턴 매칭 최적화**: 재귀적 와일드카드 알고리즘
+- **바이너리 파일 조기 배제**: Null byte 검사
+
+---
+
+## Security Considerations
+- **Path Traversal**: `std::filesystem::canonical()` 사용
+- **Symbolic Link Loops**: 기본적으로 심볼릭 링크 추적 비활성화
+- **Resource Limits**: 파일 크기/재귀 깊이 제한
+- **Input Validation**: Regex 패턴 검증, 파일 존재 여부 확인
+
+---
+
+## Coding Standards
+- **Naming**: Classes(PascalCase), Methods/Variables(camelCase), Constants(UPPER_SNAKE_CASE)
+- **Indentation**: 4 spaces
+- **Line Length**: 80 chars
+- **Braces**: Allman style
+- **Header Guards**: `#pragma once`
+- **Error Handling**: 예외(치명적), 반환값(예상 실패)
+
+---
+
+## Next Steps
+- Clean Architecture 기반 폴더 구조 재편성
+- Semantic Search 고도화
+- Hybrid Search(키워드+의미론) 도입
+
+---
+
+## References
+- **Clean Architecture**: Robert C. Martin
+- **Hexagonal Architecture**: Alistair Cockburn
+- **SOLID Principles**: Robert C. Martin
+- **Domain-Driven Design**: Eric Evans
 
 ---
 
