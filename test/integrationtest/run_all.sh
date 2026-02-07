@@ -32,6 +32,7 @@ TESTS=(
     "uc_ignore_patterns.sh"
     "uc_parallel_scan.sh"
     "uc_output_formats.sh"
+    "uc_semantic_search.sh"
 )
 
 PASSED=0
