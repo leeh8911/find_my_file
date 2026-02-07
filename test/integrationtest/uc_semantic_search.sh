@@ -19,7 +19,49 @@ echo "=== UC: Semantic Search Integration Test ==="
 # Check if ONNX Runtime is available
 if ! grep -q "ENABLE_ONNX_RUNTIME" "$BUILD_DIR/CMakeCache.txt" 2>/dev/null; then
     echo -e "${YELLOW}⚠ ONNX Runtime not enabled, skipping semantic search test${NC}"
+    echo "  To enable: cmake .. -DENABLE_LOCAL_EMBEDDING=ON"
     exit 0
+fi
+
+# Check Python dependencies
+echo "Checking Python dependencies..."
+if ! python3 -c "import torch, transformers, onnx" 2>/dev/null; then
+    echo -e "${YELLOW}⚠ Python dependencies not available${NC}"
+    echo "  Required: torch, transformers, onnx"
+    echo "  Install: pip install torch transformers onnx optimum"
+    echo ""
+    echo "  Using placeholder model for basic structure tests..."
+    USE_PLACEHOLDER=true
+else
+    echo -e "${GREEN}✓ Python dependencies available${NC}"
+    USE_PLACEHOLDER=false
+fi
+
+# Download and convert model
+MODEL_PATH="$HOME/.fmf/models/all-MiniLM-L6-v2.onnx"
+
+if [ "$USE_PLACEHOLDER" = false ]; then
+    echo ""
+    echo "Downloading all-MiniLM-L6-v2 model..."
+    
+    # Run model download script
+    SCRIPT_DIR_ABS="$(cd "$SCRIPT_DIR/../.." && pwd)"
+    if [ -f "$SCRIPT_DIR_ABS/scripts/download_model.py" ]; then
+        if python3 "$SCRIPT_DIR_ABS/scripts/download_model.py"; then
+            echo -e "${GREEN}✓ Model ready${NC}"
+        else
+            echo -e "${RED}✗ Model download failed${NC}"
+            echo "  Falling back to placeholder tests..."
+            USE_PLACEHOLDER=true
+        fi
+    else
+        echo -e "${YELLOW}⚠ Download script not found${NC}"
+        USE_PLACEHOLDER=true
+    fi
+else
+    # Create placeholder model
+    mkdir -p "$(dirname "$MODEL_PATH")"
+    touch "$MODEL_PATH"
 fi
 
 # Setup test data
@@ -48,9 +90,12 @@ Learn basic phrases in the local language to communicate better.
 Research local customs and cultural norms before your trip.
 EOF
 
-# Create dummy ONNX model for testing (placeholder)
-mkdir -p "$TEST_DATA_DIR/models"
-touch "$TEST_DATA_DIR/models/test_model.onnx"
+echo ""
+if [ "$USE_PLACEHOLDER" = false ]; then
+    echo -e "${GREEN}=== Running with REAL all-MiniLM-L6-v2 model ===${NC}"
+else
+    echo -e "${YELLOW}=== Running with PLACEHOLDER model (structure tests only) ===${NC}"
+fi
 
 echo ""
 echo "Test 1: LocalEmbeddingProvider initialization"
@@ -86,10 +131,15 @@ g++ -std=c++17 -I"$SCRIPT_DIR/../../include" \
     -o test_provider_init 2>/dev/null || true
 
 if [ -f "test_provider_init" ]; then
-    if ./test_provider_init "$TEST_DATA_DIR/models/test_model.onnx" > /dev/null 2>&1; then
+    if ./test_provider_init "$MODEL_PATH" > /dev/null 2>&1; then
         echo -e "${GREEN}✓ Test 1 passed: Provider initialization${NC}"
     else
-        echo -e "${GREEN}✓ Test 1 passed: Provider correctly rejects invalid model${NC}"
+        if [ "$USE_PLACEHOLDER" = true ]; then
+            echo -e "${GREEN}✓ Test 1 passed: Provider correctly rejects placeholder model${NC}"
+        else
+            echo -e "${RED}✗ Test 1 failed: Real model initialization failed${NC}"
+            exit 1
+        fi
     fi
 else
     echo -e "${YELLOW}⚠ Test 1 skipped: Compiler not available${NC}"
@@ -138,9 +188,12 @@ g++ -std=c++17 -I"$SCRIPT_DIR/../../include" \
     -o test_embedding_consistency 2>/dev/null || true
 
 if [ -f "test_embedding_consistency" ]; then
-    RESULT=$(./test_embedding_consistency "$TEST_DATA_DIR/models/test_model.onnx" 2>/dev/null || echo "FAILED")
+    RESULT=$(./test_embedding_consistency "$MODEL_PATH" 2>/dev/null || echo "FAILED")
     if [ "$RESULT" = "CONSISTENT" ]; then
         echo -e "${GREEN}✓ Test 2 passed: Embedding consistency${NC}"
+        if [ "$USE_PLACEHOLDER" = false ]; then
+            echo "  (Using real ONNX model)"
+        fi
     else
         echo -e "${RED}✗ Test 2 failed: Inconsistent embeddings${NC}"
         exit 1
@@ -190,7 +243,7 @@ g++ -std=c++17 -I"$SCRIPT_DIR/../../include" \
     -o test_batch_processing 2>/dev/null || true
 
 if [ -f "test_batch_processing" ]; then
-    RESULT=$(./test_batch_processing "$TEST_DATA_DIR/models/test_model.onnx" 2>/dev/null || echo "FAILED")
+    RESULT=$(./test_batch_processing "$MODEL_PATH" 2>/dev/null || echo "FAILED")
     if [ "$RESULT" = "BATCH_OK" ]; then
         echo -e "${GREEN}✓ Test 3 passed: Batch processing${NC}"
     else
@@ -263,9 +316,13 @@ g++ -std=c++17 -I"$SCRIPT_DIR/../../include" \
     -o test_semantic_searcher 2>/dev/null || true
 
 if [ -f "test_semantic_searcher" ]; then
-    RESULT=$(./test_semantic_searcher "$TEST_DATA_DIR/models/test_model.onnx" "$TEST_DATA_DIR/semantic_test" 2>/dev/null | head -1 || echo "FAILED")
+    RESULT=$(./test_semantic_searcher "$MODEL_PATH" "$TEST_DATA_DIR/semantic_test" 2>/dev/null | head -1 || echo "FAILED")
     if [ "$RESULT" = "SEARCH_OK" ]; then
         echo -e "${GREEN}✓ Test 4 passed: SemanticSearcher integration${NC}"
+        if [ "$USE_PLACEHOLDER" = false ]; then
+            echo "  Query: 'artificial intelligence neural networks'"
+            echo "  Expected: ai_basics.txt and ml_tutorial.txt ranked higher"
+        fi
     else
         echo -e "${YELLOW}⚠ Test 4 partial: SemanticSearcher executed (results may vary)${NC}"
     fi
@@ -337,9 +394,13 @@ g++ -std=c++17 -I"$SCRIPT_DIR/../../include" \
     -o test_similar_search 2>/dev/null || true
 
 if [ -f "test_similar_search" ]; then
-    RESULT=$(./test_similar_search "$TEST_DATA_DIR/models/test_model.onnx" "$TEST_DATA_DIR/semantic_test" 2>/dev/null | head -1 || echo "FAILED")
+    RESULT=$(./test_similar_search "$MODEL_PATH" "$TEST_DATA_DIR/semantic_test" 2>/dev/null | head -1 || echo "FAILED")
     if [ "$RESULT" = "SIMILAR_OK" ]; then
         echo -e "${GREEN}✓ Test 5 passed: Similar file search${NC}"
+        if [ "$USE_PLACEHOLDER" = false ]; then
+            echo "  Target: ml_tutorial.txt"
+            echo "  Expected: ai_basics.txt (similar AI content)"
+        fi
     else
         echo -e "${YELLOW}⚠ Test 5 partial: Similar search executed${NC}"
     fi
@@ -349,7 +410,6 @@ fi
 
 # Cleanup
 rm -rf "$TEST_DATA_DIR/semantic_test"
-rm -rf "$TEST_DATA_DIR/models"
 rm -f "$BUILD_DIR"/test_provider_init*
 rm -f "$BUILD_DIR"/test_embedding_consistency*
 rm -f "$BUILD_DIR"/test_batch_processing*
@@ -357,4 +417,12 @@ rm -f "$BUILD_DIR"/test_semantic_searcher*
 rm -f "$BUILD_DIR"/test_similar_search*
 
 echo ""
-echo -e "${GREEN}=== Semantic Search Integration Tests Complete ===${NC}"
+if [ "$USE_PLACEHOLDER" = false ]; then
+    echo -e "${GREEN}=== Semantic Search Integration Tests Complete (REAL MODEL) ===${NC}"
+    echo "Model: all-MiniLM-L6-v2 (384 dimensions)"
+else
+    echo -e "${YELLOW}=== Semantic Search Integration Tests Complete (PLACEHOLDER) ===${NC}"
+    echo "To test with real model:"
+    echo "  1. Install: pip install torch transformers onnx optimum"
+    echo "  2. Run test again - model will auto-download"
+fi
