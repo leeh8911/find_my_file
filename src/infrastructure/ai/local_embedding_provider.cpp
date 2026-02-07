@@ -13,6 +13,8 @@
 #include <sstream>
 #include <stdexcept>
 
+#include "infrastructure/ai/simple_tokenizer.h"
+
 namespace fmf
 {
 
@@ -26,7 +28,10 @@ class LocalEmbeddingProvider::Impl
 {
  public:
     explicit Impl(const std::string& modelPath, bool useGpu)
-        : m_modelPath(modelPath), m_useGpu(useGpu), m_dimension(384)
+        : m_modelPath(modelPath),
+          m_useGpu(useGpu),
+          m_dimension(384),
+          m_tokenizer(SimpleTokenizer::DEFAULT_MAX_LENGTH, true)
     {
         // TODO: Initialize ONNX Runtime session
         // For now, this is a placeholder implementation
@@ -81,6 +86,11 @@ class LocalEmbeddingProvider::Impl
         return m_dimension;
     }
 
+    std::vector<int64_t> tokenize(const std::string& text) const
+    {
+        return m_tokenizer.tokenize(text);
+    }
+
  private:
     void initializeModel()
     {
@@ -113,6 +123,7 @@ class LocalEmbeddingProvider::Impl
     std::string m_modelPath;
     bool m_useGpu;
     size_t m_dimension;
+    SimpleTokenizer m_tokenizer;
     // TODO: Add ONNX session member
     // Ort::Session m_session;
 };
@@ -154,32 +165,7 @@ size_t LocalEmbeddingProvider::getDimension() const
 std::vector<int64_t> LocalEmbeddingProvider::tokenize(
     const std::string& text) const
 {
-    // TODO: Implement proper BPE/WordPiece tokenizer
-    // For now, use simple whitespace tokenization with character hashing
-
-    std::vector<int64_t> tokens;
-    std::istringstream stream(text);
-    std::string word;
-
-    while (stream >> word)
-    {
-        // Simple hash function for words
-        int64_t hash = 0;
-        for (char c : word)
-        {
-            hash = hash * 31 + static_cast<int64_t>(c);
-        }
-        tokens.push_back(std::abs(hash) % 30000);  // Vocab size ~30k
-    }
-
-    // Add special tokens (CLS, SEP)
-    if (!tokens.empty())
-    {
-        tokens.insert(tokens.begin(), 101);  // [CLS] token
-        tokens.push_back(102);               // [SEP] token
-    }
-
-    return tokens;
+    return m_impl->tokenize(text);
 }
 
 std::string LocalEmbeddingProvider::resolveModelPath(

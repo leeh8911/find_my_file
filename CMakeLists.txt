@@ -11,6 +11,20 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 endif()
 
+# Build options
+option(ENABLE_LOCAL_EMBEDDING "Enable local embedding with ONNX Runtime" OFF)
+
+# Find ONNX Runtime (optional)
+if(ENABLE_LOCAL_EMBEDDING)
+    find_package(onnxruntime QUIET)
+    if(onnxruntime_FOUND)
+        message(STATUS "ONNX Runtime found - Local embedding enabled")
+        add_compile_definitions(ENABLE_ONNX_RUNTIME)
+    else()
+        message(WARNING "ONNX Runtime not found - Local embedding will use placeholder implementation")
+    endif()
+endif()
+
 # Include directories
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
@@ -67,6 +81,7 @@ set(HEADERS
     include/infrastructure/config/config_file.h
     include/infrastructure/threading/thread_pool.h
     include/infrastructure/ai/local_embedding_provider.h
+    include/infrastructure/ai/simple_tokenizer.h
 )
 
 # Main executable
@@ -112,6 +127,7 @@ add_executable(tests
     tests/infrastructure/test_config_file.cpp
     tests/infrastructure/test_thread_pool.cpp
     tests/infrastructure/test_local_embedding_provider.cpp
+    tests/infrastructure/test_simple_tokenizer.cpp
 
     ${SOURCES}
 )
