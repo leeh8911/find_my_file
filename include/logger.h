@@ -2,8 +2,9 @@
  * @file logger.h
  * @brief Logging system for find_my_files application
  *
- * Provides a flexible logging system with multiple log levels and output targets.
- * Follows the Single Responsibility Principle (SRP) by only handling logging concerns.
+ * Provides a flexible logging system with multiple log levels and output
+ * targets. Follows the Single Responsibility Principle (SRP) by only handling
+ * logging concerns.
  *
  * Features:
  * - Multiple log levels (DEBUG, INFO, WARN, ERROR)

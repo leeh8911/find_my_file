@@ -184,7 +184,8 @@ TEST_F(LoggerTest, LogFormatContainsLevel)
 {
     Logger::instance().setLogFile(testLogFile_);
     Logger::instance().setConsoleOutput(false);
-    Logger::instance().setLevel(LogLevel::DEBUG);  // Set to DEBUG to capture all levels
+    Logger::instance().setLevel(
+        LogLevel::DEBUG);  // Set to DEBUG to capture all levels
 
     Logger::instance().debug("Debug");
     Logger::instance().info("Info");
@@ -211,13 +212,15 @@ TEST_F(LoggerTest, ThreadSafety)
     std::vector<std::thread> threads;
     for (int i = 0; i < numThreads; ++i)
     {
-        threads.emplace_back([i, messagesPerThread]() {
-            for (int j = 0; j < messagesPerThread; ++j)
+        threads.emplace_back(
+            [i, messagesPerThread]()
             {
-                Logger::instance().info("Thread " + std::to_string(i) +
-                                        " message " + std::to_string(j));
-            }
-        });
+                for (int j = 0; j < messagesPerThread; ++j)
+                {
+                    Logger::instance().info("Thread " + std::to_string(i) +
+                                            " message " + std::to_string(j));
+                }
+            });
     }
 
     for (auto& thread : threads)

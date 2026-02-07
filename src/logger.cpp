@@ -68,13 +68,19 @@ bool Logger::isConsoleOutputEnabled() const
     return consoleOutput_;
 }
 
-void Logger::debug(const std::string& message) { log(LogLevel::DEBUG, message); }
+void Logger::debug(const std::string& message)
+{
+    log(LogLevel::DEBUG, message);
+}
 
 void Logger::info(const std::string& message) { log(LogLevel::INFO, message); }
 
 void Logger::warn(const std::string& message) { log(LogLevel::WARN, message); }
 
-void Logger::error(const std::string& message) { log(LogLevel::ERROR, message); }
+void Logger::error(const std::string& message)
+{
+    log(LogLevel::ERROR, message);
+}
 
 void Logger::flush()
 {
@@ -111,8 +117,8 @@ void Logger::log(LogLevel level, const std::string& message)
 
     // Build log message
     std::ostringstream oss;
-    oss << "[" << getCurrentTimestamp() << "] [" << levelToString(level)
-        << "] " << message << "\n";
+    oss << "[" << getCurrentTimestamp() << "] [" << levelToString(level) << "] "
+        << message << "\n";
 
     std::string logMessage = oss.str();
 

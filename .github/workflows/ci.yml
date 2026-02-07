@@ -1,0 +1,137 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    name: Build and Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        build_type: [Debug, Release]
+        include:
+          - os: ubuntu-latest
+            compiler: g++
+          - os: macos-latest
+            compiler: clang++
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Install dependencies (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake g++ clang-format clang-tidy
+    
+    - name: Install dependencies (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew install cmake
+    
+    - name: Create build directory
+      run: mkdir -p build
+    
+    - name: Configure CMake
+      run: |
+        cd build
+        cmake -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} ..
+    
+    - name: Build
+      run: |
+        cd build
+        make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+    
+    - name: Run unit tests
+      run: |
+        cd build
+        ./tests --gtest_output=xml:test-results.xml
+    
+    - name: Run integration tests (Ubuntu only)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        cd test/integrationtest
+        bash run_all.sh
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results-${{ matrix.os }}-${{ matrix.build_type }}
+        path: build/test-results.xml
+    
+    - name: Upload binary
+      uses: actions/upload-artifact@v3
+      with:
+        name: find_my_files-${{ matrix.os }}-${{ matrix.build_type }}
+        path: build/find_my_files
+
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Install tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang-format clang-tidy cppcheck
+    
+    - name: Check code formatting
+      run: |
+        find src include -name "*.cpp" -o -name "*.h" | xargs clang-format --dry-run --Werror
+    
+    - name: Run cppcheck
+      run: |
+        cppcheck --enable=all --suppress=missingIncludeSystem \
+          --error-exitcode=1 src/ include/
+    
+    - name: Run clang-tidy
+      run: |
+        mkdir -p build
+        cd build
+        cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ..
+        cd ..
+        find src -name "*.cpp" | xargs clang-tidy -p build
+
+  release:
+    name: Create Release
+    needs: [build-and-test, code-quality]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Get version
+      id: get_version
+      run: |
+        if grep -q "version" CMakeLists.txt; then
+          VERSION=$(grep -oP 'VERSION \K[0-9]+\.[0-9]+\.[0-9]+' CMakeLists.txt || echo "0.6.0")
+        else
+          VERSION="0.6.0"
+        fi
+        echo "version=v$VERSION" >> $GITHUB_OUTPUT
+    
+    - name: Download artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: artifacts
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: artifacts/**/*
+        token: ${{ secrets.GITHUB_TOKEN }}

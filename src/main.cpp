@@ -92,8 +92,8 @@ int main(int argc, char* argv[])
     logger.debug("Follow links: " +
                  std::string(config.followLinks ? "yes" : "no"));
     logger.debug("Max depth: " + (config.maxDepth >= 0
-                                     ? std::to_string(config.maxDepth)
-                                     : "unlimited"));
+                                      ? std::to_string(config.maxDepth)
+                                      : "unlimited"));
     logger.debug("Thread count: " + std::to_string(config.threadCount));
 
     // Create and configure file scanner
