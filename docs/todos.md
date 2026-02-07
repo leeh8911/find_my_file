@@ -133,22 +133,153 @@
   - [x] 통합 테스트 (8 test cases)
   - [x] 예제 설정 파일 (examples/.findmyfilesrc)
   - [x] README 문서화 (Configuration File 섹션)
-- [ ] 플러그인 시스템
+- [ ] 플러그인 시스템 (보류)
   - [ ] 커스텀 필터 추가
   - [ ] 커스텀 출력 포맷
-- [ ] GUI 버전 (장기 목표)
+- [ ] GUI 버전 (장기 목표, 보류)
   - [ ] Qt 또는 다른 GUI 프레임워크
-- [ ] 네트워크 드라이브 지원
+- [ ] 네트워크 드라이브 지원 (보류)
   - [ ] SMB/NFS 마운트 처리
-- [ ] 데이터베이스 인덱싱
-  - [ ] SQLite 통합
-  - [ ] 빠른 검색을 위한 인덱스
+
+## Phase 10: Semantic Search (LLM 기반 의미론적 검색)
+### 목표
+파일 내용의 의미를 이해하고 자연어 쿼리로 관련 파일을 찾는 기능 추가
+
+### 1. 인터페이스 설계 및 추상화
+- [ ] IEmbeddingProvider 인터페이스 정의
+  - [ ] generateEmbedding(text) → vector<float>
+  - [ ] batchGenerate(texts) → vector<vector<float>>
+  - [ ] getDimension() → size_t
+- [ ] IVectorStore 인터페이스 정의
+  - [ ] add(id, vector, metadata)
+  - [ ] search(queryVector, topK) → vector<SearchResult>
+  - [ ] remove(id)
+  - [ ] save(path) / load(path)
+- [ ] SemanticResult 구조체 정의
+  - [ ] FileInfo, relevanceScore, matchedChunks
+- [ ] 단위 테스트: 인터페이스 mock 구현
+
+### 2. Mock Provider 구현 (테스트용)
+- [ ] MockEmbeddingProvider 클래스
+  - [ ] 고정된 테스트 벡터 반환
+  - [ ] 결정론적 동작 보장
+- [ ] MockVectorStore 클래스
+  - [ ] In-memory map 기반 저장
+  - [ ] 단순 cosine similarity 검색
+- [ ] 단위 테스트: Mock을 사용한 기본 시나리오
+
+### 3. FAISS 기반 VectorStore
+- [ ] FAISSStore 클래스 구현
+  - [ ] FAISS 라이브러리 통합 (CMake)
+  - [ ] Index 생성 및 관리
+  - [ ] Persistence (save/load)
+- [ ] CMake 옵션: -DENABLE_FAISS=ON
+- [ ] 단위 테스트: FAISS 기본 동작
+- [ ] 통합 테스트: 대량 벡터 인덱싱/검색
+
+### 4. OpenAI Embedding Provider
+- [ ] OpenAIProvider 클래스 구현
+  - [ ] HTTP client 통합 (libcurl or cpp-httplib)
+  - [ ] API 키 관리 (환경변수/config)
+  - [ ] Rate limiting 처리
+  - [ ] Retry logic with exponential backoff
+- [ ] 에러 처리
+  - [ ] Network error → fallback to traditional search
+  - [ ] API error → 명확한 에러 메시지
+- [ ] 단위 테스트: HTTP mock
+- [ ] 통합 테스트: 실제 API 호출 (CI skip 가능)
+
+### 5. SemanticSearcher 코어 로직
+- [ ] SemanticSearcher 클래스 구현
+  - [ ] indexFile(filepath) - 파일 인덱싱
+  - [ ] indexDirectory(dirpath) - 디렉토리 인덱싱
+  - [ ] search(query, topK) - 검색 수행
+  - [ ] searchSimilar(filepath, topK) - 유사 파일 찾기
+- [ ] Chunking 전략
+  - [ ] FixedSizeChunker (기본)
+  - [ ] SlidingWindowChunker
+- [ ] Index 관리
+  - [ ] .fmf_index/ 디렉토리 구조
+  - [ ] metadata.json (파일 경로, 타임스탬프)
+  - [ ] Incremental update (변경 감지)
+- [ ] 단위 테스트: 각 메서드별 테스트
+- [ ] 통합 테스트: End-to-end 시나리오
+
+### 6. CLI 통합
+- [ ] CommandLineParser 확장
+  - [ ] --semantic-search QUERY
+  - [ ] --similar FILE
+  - [ ] --index (인덱싱만 수행)
+  - [ ] --rebuild-index
+  - [ ] --embedding-provider [openai|local]
+  - [ ] --top-k N
+- [ ] ApplicationConfig 확장
+  - [ ] semanticSearchQuery
+  - [ ] similarFile
+  - [ ] embeddingProvider
+  - [ ] topK
+- [ ] main.cpp 통합
+  - [ ] Semantic search 모드 분기
+  - [ ] Index 자동 생성/업데이트
+  - [ ] 결과 출력 (relevance score 포함)
+- [ ] 통합 테스트: CLI 시나리오 (uc_semantic_search.sh)
+
+### 7. Hybrid Search (선택적)
+- [ ] QueryProcessor 클래스
+  - [ ] Keyword search (ContentSearcher) + Semantic search 병합
+  - [ ] Score normalization
+  - [ ] Result ranking algorithm
+- [ ] --hybrid-search 옵션
+- [ ] 통합 테스트: Hybrid search 시나리오
+
+### 8. 인덱스 Persistence
+- [ ] Index 저장/로드 최적화
+  - [ ] 압축 (zlib/zstd)
+  - [ ] 증분 저장
+- [ ] Cache 관리 (.fmf_cache/)
+  - [ ] Embedding cache (중복 계산 방지)
+  - [ ] LRU eviction
+- [ ] 성능 벤치마크
+  - [ ] 인덱싱 속도
+  - [ ] 검색 속도
+  - [ ] 메모리 사용량
+
+### 9. Local Model 지원 (선택적, 장기)
+- [ ] ONNX Runtime 통합
+- [ ] llama.cpp 통합
+- [ ] LocalModelProvider 구현
+- [ ] Model 다운로드/관리
+
+### 10. 문서화 및 예제
+- [ ] README.md 업데이트
+  - [ ] Semantic Search 섹션
+  - [ ] 사용 예제
+  - [ ] 설치 가이드 (optional dependencies)
+- [ ] examples/semantic_search_demo.sh
+- [ ] ConfigFile 확장 (.findmyfilesrc)
+  - [ ] [semantic] 섹션
+  - [ ] embedding_provider, model, api_key_env
+
+### Phase 10 Definition of Done
+- [ ] 모든 단위 테스트 통과
+- [ ] 모든 통합 테스트 통과
+- [ ] SOLID 원칙 준수
+- [ ] clang-format / clang-tidy / cpplint 통과
+- [ ] Architecture.md 업데이트 완료
+- [ ] README.md 업데이트 완료
+- [ ] 성능 벤치마크 결과 문서화
 
 ## 현재 진행 상황
-- Phase: 9 진행 중 (설정 파일 지원 완료 ✅)
-- 완료율: 85% (핵심 기능 모두 완성, 선택적 기능 일부 남음)
+- Phase: 9 완료 ✅, Phase 10 준비 중 (Semantic Search 설계)
+- 완료율: 85% (전통적 검색 완성, LLM 기반 검색 추가 예정)
 - 총 코드: ~4,100 라인 (헤더 + 구현)
 - 총 테스트: 98 단위 테스트 + 40 통합 테스트 = 138 테스트
+
+### Phase 10 예상 추가
+- 예상 코드: +2,000 라인 (SemanticSearcher, Providers, VectorStore)
+- 예상 테스트: +30 단위 테스트, +10 통합 테스트
+- 예상 외부 의존성: FAISS, libcurl, JSON library
+- 예상 완료율: 95% (Phase 10 완료 시)
 
 ### 완료된 Phase
 

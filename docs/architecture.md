@@ -309,6 +309,25 @@ INI 스타일 설정 파일 파싱 클래스
 7. 결과 출력
 ```
 
+### Semantic Search Flow (Phase 10)
+```
+1. main() → semantic search 옵션 감지
+2. SemanticSearcher 초기화
+   ├─ VectorStore 로드 (.fmf_index/)
+   └─ EmbeddingProvider 초기화
+3. Index 확인
+   ├─ 없음 → FileScanner로 파일 목록 수집 → 인덱싱
+   └─ 오래됨 → 변경된 파일만 재인덱싱
+4. SemanticSearcher::search(query) 호출
+   ├─ Query embedding 생성
+   ├─ VectorStore에서 유사도 검색
+   ├─ Top-K 결과 추출
+   └─ (Optional) Hybrid: ContentSearcher 결과와 병합
+5. SemanticResult → SearchResult 변환
+6. Relevance score 기준 정렬
+7. 결과 출력 (score와 함께)
+```
+
 ### Component Dependencies
 ```
 main.cpp
@@ -329,12 +348,27 @@ main.cpp
   │  ├─ IgnorePatterns
   │  ├─ ThreadPool (Phase 4)
   │  └─ Logger
+  ├─ SemanticSearcher (Phase 10 - 계획)
+  │  ├─ EmbeddingGenerator
+  │  │  └─ IEmbeddingProvider (Port)
+  │  │     ├─ OpenAIProvider
+  │  │     └─ LocalModelProvider
+  │  ├─ VectorStore
+  │  │  └─ IVectorStore (Port)
+  │  │     ├─ FAISSStore
+  │  │     └─ ChromaDBStore
+  │  ├─ QueryProcessor
+  │  ├─ FileScanner (파일 목록)
+  │  └─ Logger
   └─ OutputFormatter (Phase 5)
      └─ SearchResult 출력
 
 Configuration Flow:
-ConfigFile → CommandLineParser → ApplicationConfig → main → FileScanner
+ConfigFile → CommandLineParser → ApplicationConfig → main → FileScanner/SemanticSearcher
 (CLI args override config file settings)
+
+Semantic Search Flow:
+SemanticSearcher → EmbeddingProvider → VectorStore → SemanticResult → SearchResult
 ```
 
 ## Design Patterns
