@@ -28,6 +28,7 @@ set(SOURCES
     src/command_line_parser.cpp
     src/logger.cpp
     src/config_file.cpp
+    src/semantic_searcher.cpp
 )
 
 # Header files
@@ -79,6 +80,7 @@ add_executable(tests
     tests/test_logger.cpp
     tests/test_config_file.cpp
     tests/test_semantic_interfaces.cpp
+    tests/test_semantic_searcher.cpp
     ${SOURCES}
 )
 
