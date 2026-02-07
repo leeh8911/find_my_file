@@ -89,6 +89,25 @@ class CommandLineParser
     std::optional<ApplicationConfig> parse(int argc, char* argv[]);
 
     /**
+     * @brief Parse command line arguments with default configuration
+     *
+     * Parses the given command line arguments and constructs an
+     * ApplicationConfig object, using the provided default configuration
+     * as a starting point. CLI arguments override the defaults.
+     *
+     * @param argc Argument count from main()
+     * @param argv Argument vector from main()
+     * @param defaultConfig Default configuration (e.g., from config file)
+     * @return ApplicationConfig if successful, std::nullopt on error
+     *
+     * @note CLI arguments take precedence over defaultConfig
+     * @note On parse error, an error message is printed to std::cerr
+     * @note Returns std::nullopt for help request (-h/--help)
+     */
+    std::optional<ApplicationConfig> parse(int argc, char* argv[],
+                                           const ApplicationConfig& defaultConfig);
+
+    /**
      * @brief Print usage information
      *
      * Displays comprehensive help text showing all available options,

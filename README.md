@@ -22,6 +22,7 @@ A fast, flexible, and powerful file search tool written in C++17.
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Usage](#usage)
+- [Configuration File](#configuration-file)
 - [Examples](#examples)
 - [Building from Source](#building-from-source)
 - [Running Tests](#running-tests)
@@ -125,6 +126,91 @@ find_my_files [OPTIONS] <directory>
 | Option | Description |
 |--------|-------------|
 | `-h, --help` | Display help message |
+
+## Configuration File
+
+Find My Files supports configuration files to set default search options and save search profiles. The tool automatically looks for `.findmyfilesrc` in:
+
+1. Current directory (`./.findmyfilesrc`)
+2. Home directory (`~/.findmyfilesrc`)
+3. XDG config directory (`~/.config/find_my_files/config`)
+
+CLI arguments always override settings from configuration files.
+
+### Configuration Format
+
+Configuration files use INI-style format with sections and key-value pairs:
+
+```ini
+# Default settings for all searches
+[default]
+recursive=true
+follow_links=false
+threads=4
+format=detailed
+color=true
+verbosity=1
+ignore_file=.gitignore
+
+# Saved search profile for C++ files
+[search.cpp_files]
+extensions=.cpp,.h,.hpp
+use_regex=false
+files_only=true
+
+# Saved search profile for TODO comments
+[search.todos]
+content=TODO|FIXME
+use_regex=true
+recursive=true
+```
+
+### Configuration Options
+
+All CLI options can be specified in the `[default]` section:
+
+| Key | Type | Description | Example |
+|-----|------|-------------|---------|
+| `recursive` | boolean | Enable recursive search | `recursive=true` |
+| `follow_links` | boolean | Follow symbolic links | `follow_links=false` |
+| `max_depth` | integer | Maximum recursion depth | `max_depth=5` |
+| `threads` | integer | Number of threads | `threads=4` |
+| `format` | string | Output format | `format=detailed` |
+| `color` | boolean | Enable colored output | `color=true` |
+| `verbosity` | integer | Verbosity level (0-2) | `verbosity=1` |
+| `ignore_file` | string | Ignore patterns file | `ignore_file=.gitignore` |
+| `log_file` | string | Log file path | `log_file=search.log` |
+| `name` | string | Name pattern | `name=*.cpp` |
+| `extensions` | string | Comma-separated extensions | `extensions=.c,.h` |
+| `path` | string | Path pattern | `path=src/*` |
+| `content` | string | Content search pattern | `content=TODO` |
+| `use_regex` | boolean | Use regex patterns | `use_regex=true` |
+| `ignore_case` | boolean | Case-insensitive search | `ignore_case=true` |
+| `files_only` | boolean | Files only | `files_only=true` |
+| `directories_only` | boolean | Directories only | `directories_only=false` |
+| `min_size` | integer | Minimum file size (bytes) | `min_size=1024` |
+| `max_size` | integer | Maximum file size (bytes) | `max_size=1048576` |
+
+Boolean values accept: `true`, `yes`, `on`, `1` (for true) and `false`, `no`, `off`, `0` (for false).
+
+### Example Configuration
+
+See [examples/.findmyfilesrc](examples/.findmyfilesrc) for a complete example with multiple search profiles.
+
+### Configuration Precedence
+
+When the same option is specified in multiple places:
+
+1. **CLI arguments** (highest priority) - Always override everything
+2. **Config file** - Used as defaults
+3. **Built-in defaults** (lowest priority) - Used when neither CLI nor config file specify a value
+
+Example:
+```bash
+# Config file has: recursive=true
+# This search will NOT be recursive (CLI overrides config)
+./find_my_files . --no-recursive
+```
 
 ## Examples
 

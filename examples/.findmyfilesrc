@@ -1,0 +1,80 @@
+# Find My Files Configuration Example
+# ~/.findmyfilesrc or .findmyfilesrc in project root
+
+# Default settings applied to all searches
+[default]
+# Enable recursive directory scanning
+recursive=true
+
+# Follow symbolic links (use with caution)
+follow_links=false
+
+# Maximum recursion depth (-1 for unlimited)
+# max_depth=5
+
+# Number of parallel threads (0 for sequential)
+threads=4
+
+# Output format: default, detailed, or json
+format=default
+
+# Enable colored output
+color=true
+
+# Verbosity level: 0=warn, 1=info, 2=debug
+verbosity=0
+
+# Path to ignore patterns file (like .gitignore)
+ignore_file=.gitignore
+
+# Log file path (optional)
+# log_file=~/.find_my_files.log
+
+# Saved search profiles
+# Use these with future CLI support: fmf --profile cpp
+
+[search.cpp_files]
+# Find all C++ source and header files
+extensions=.cpp,.cc,.cxx,.h,.hpp,.hxx
+use_regex=false
+ignore_case=false
+files_only=true
+
+[search.python]
+# Find Python source files
+extensions=.py,.pyw
+files_only=true
+
+[search.todos]
+# Find all TODO comments in source code
+content=TODO|FIXME|HACK|XXX
+use_regex=true
+recursive=true
+
+[search.large_files]
+# Find files larger than 1MB
+min_size=1048576
+files_only=true
+
+[search.recent]
+# Find recently modified files (implement with future date filter)
+files_only=true
+recursive=true
+
+[search.logs]
+# Find log files
+extensions=.log,.txt
+name=*.log
+recursive=true
+
+[search.config_files]
+# Find configuration files
+name=*config*
+extensions=.json,.yaml,.yml,.toml,.ini,.cfg,.conf
+ignore_case=true
+
+[search.build_artifacts]
+# Find build artifacts (useful for cleanup)
+name=*.o,*.obj,*.so,*.dll,*.exe,*.a,*.lib
+files_only=true
+recursive=true

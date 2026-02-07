@@ -13,13 +13,21 @@ namespace fmf
 std::optional<ApplicationConfig> CommandLineParser::parse(int argc,
                                                           char* argv[])
 {
+    // Call overloaded version with empty default config
+    return parse(argc, argv, ApplicationConfig{});
+}
+
+std::optional<ApplicationConfig> CommandLineParser::parse(
+    int argc, char* argv[], const ApplicationConfig& defaultConfig)
+{
     if (argc < 2)
     {
         std::cerr << "Error: No arguments provided\n\n";
         return std::nullopt;
     }
 
-    ApplicationConfig config;
+    // Start with default configuration
+    ApplicationConfig config = defaultConfig;
 
     // Parse all arguments
     for (int i = 1; i < argc; ++i)
