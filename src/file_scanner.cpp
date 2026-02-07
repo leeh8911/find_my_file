@@ -155,9 +155,34 @@ bool FileScanner::shouldProcess(const std::filesystem::path& path)
 
 SearchResult FileScanner::search(const std::filesystem::path& dirPath,
                                  bool recursive, const SearchCriteria& criteria,
-                                 int maxDepth)
+                                 int maxDepth, size_t threadCount)
 {
-    // Get all files first
+    // If parallel scan is requested and recursive
+    if (threadCount > 0 && recursive)
+    {
+        SearchResult result;
+        ThreadPool pool(threadCount);
+        scanRecursiveParallel(dirPath, 0, maxDepth, result, pool);
+        pool.wait();
+
+        // Filter by criteria if needed
+        if (criteria.isEmpty())
+        {
+            return result;
+        }
+
+        SearchResult filteredResults;
+        for (const auto& fileInfo : result)
+        {
+            if (matchesCriteria(fileInfo, criteria))
+            {
+                filteredResults.addFile(fileInfo);
+            }
+        }
+        return filteredResults;
+    }
+
+    // Sequential scan
     SearchResult allResults = recursive
                                   ? scanDirectoryRecursive(dirPath, maxDepth)
                                   : scanDirectory(dirPath);
@@ -320,6 +345,74 @@ bool FileScanner::matchesCriteria(const FileInfo& fileInfo,
     }
 
     return true;
+}
+
+void FileScanner::scanRecursiveParallel(const std::filesystem::path& dirPath,
+                                        int currentDepth, int maxDepth,
+                                        SearchResult& result, ThreadPool& pool)
+{
+    // Check depth limit
+    if (maxDepth >= 0 && currentDepth > maxDepth)
+    {
+        return;
+    }
+
+    // Check if directory exists
+    if (!std::filesystem::exists(dirPath) ||
+        !std::filesystem::is_directory(dirPath))
+    {
+        return;
+    }
+
+    try
+    {
+        std::vector<std::future<void>> futures;
+
+        for (const auto& entry : std::filesystem::directory_iterator(dirPath))
+        {
+            // Check ignore patterns
+            if (!shouldProcess(entry.path()))
+            {
+                continue;
+            }
+
+            try
+            {
+                // Add current entry
+                FileInfo fileInfo(entry.path());
+                result.addFile(fileInfo);
+
+                // If directory and not at max depth, scan it in parallel
+                if (entry.is_directory() &&
+                    (maxDepth < 0 || currentDepth < maxDepth))
+                {
+                    // Submit directory scan as a task
+                    futures.push_back(pool.submit(
+                        [this, entry, currentDepth, maxDepth, &result, &pool]()
+                        {
+                            scanRecursiveParallel(entry.path(),
+                                                  currentDepth + 1, maxDepth,
+                                                  result, pool);
+                        }));
+                }
+            }
+            catch (const std::filesystem::filesystem_error&)
+            {
+                // Skip files we can't access
+                continue;
+            }
+        }
+
+        // Wait for all subdirectory scans to complete
+        for (auto& future : futures)
+        {
+            future.wait();
+        }
+    }
+    catch (const std::filesystem::filesystem_error&)
+    {
+        // Skip directories we can't access
+    }
 }
 
 }  // namespace fmf

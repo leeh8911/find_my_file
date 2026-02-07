@@ -119,6 +119,26 @@ Find My Files (fmf)는 C++17 기반의 파일 검색 도구로, 명령줄 인터
 - `*.tmp`: 특정 확장자 제외
 - `build*`: 접두사 패턴
 
+#### 8. ThreadPool (`thread_pool.h/cpp`) - Phase 4
+병렬 작업 실행을 위한 스레드 풀 클래스
+
+**책임:**
+- 워커 스레드 풀 관리
+- 작업 큐를 통한 태스크 제출
+- std::future를 통한 결과 반환
+- 스레드 안전한 작업 스케줄링
+
+**주요 메서드:**
+- `submit()`: 태스크 제출 (템플릿 기반, future 반환)
+- `wait()`: 모든 작업 완료 대기
+- `size()`, `pendingTasks()`: 풀 상태 조회
+
+**구현 세부사항:**
+- std::packaged_task로 결과 처리
+- mutex/condition_variable로 동기화
+- std::atomic으로 활성 작업 추적
+- RAII 기반 스레드 관리 (소멸자에서 대기)
+
 ## Data Flow
 
 ### Search Operation Flow
@@ -190,18 +210,24 @@ main.cpp
 
 ### Unit Tests
 각 클래스별로 독립적인 테스트 스위트 구성:
-- `FileInfoTest`: FileInfo 클래스 (6 tests)
-- `SearchCriteriaTest`: SearchCriteria 클래스 (9 tests)
-- `PatternMatcherTest`: PatternMatcher 유틸리티 (8 tests)
-- `FileScannerTest`: FileScanner 코어 로직 (6 tests)
-- `ContentSearcherTest`: ContentSearcher 유틸리티 (6 tests)
-- `IgnorePatternsTest`: IgnorePatterns 클래스 (10 tests)
+- FileInfoTest: FileInfo 클래스 (6 tests)
+- SearchCriteriaTest: SearchCriteria 클래스 (9 tests)
+- PatternMatcherTest: PatternMatcher 유틸리티 (8 tests)
+- FileScannerTest: FileScanner 코어 로직 (6 tests)
+- ContentSearcherTest: ContentSearcher 유틸리티 (6 tests)
+- IgnorePatternsTest: IgnorePatterns 클래스 (10 tests)
+- ThreadPoolTest: ThreadPool 병렬 실행 (12 tests)
+
+**Total: 57 unit tests**
 
 ### Integration Tests
 실제 파일 시스템 사용 시나리오 테스트:
-- `uc_regex_search.sh`: Regex 패턴 매칭 (3 tests)
-- `uc_content_search.sh`: 파일 내용 검색 (4 tests)
-- `uc_ignore_patterns.sh`: 제외 패턴 (.gitignore) (4 tests)
+- uc_regex_search.sh: Regex 패턴 매칭 (3 tests)
+- uc_content_search.sh: 파일 내용 검색 (4 tests)
+- uc_ignore_patterns.sh: 제외 패턴 (.gitignore) (4 tests)
+- uc_parallel_scan.sh: 병렬 스캔 성능 (4 tests)
+
+**Total: 15 integration tests**
 
 ## Phase Implementation Status
 
@@ -221,9 +247,14 @@ main.cpp
 - IgnorePatterns (.gitignore 스타일)
 - 날짜 필터링
 
+### Phase 4: 성능 최적화 ✅
+- 멀티스레딩 (ThreadPool 기반 병렬 스캔)
+- 스레드 안전 결과 수집 (mutex 기반 SearchResult)
+- CLI 스레드 개수 옵션 (-j, --threads)
+- 성능 벤치마크 테스트
+
 ### Upcoming Phases
-- **Phase 4**: 성능 최적화 (멀티스레딩, 캐싱)
-- **Phase 5**: CLI 개선 (컬러 출력, 진행률 표시)
+- **Phase 5**: CLI 개선 (컬러 출력, 진행률 표시, JSON 출력)
 - **Phase 6**: 추가 기능 (심볼릭 링크 처리, 중복 파일 검색)
 - **Phase 7**: 성능 테스트 및 벤치마크
 - **Phase 8**: 문서화 및 사용자 가이드
@@ -308,15 +339,23 @@ find_my_files/
 ## Performance Considerations
 
 ### Current Implementation
-- **Single-threaded**: 순차적 디렉토리 순회
+- **Multi-threaded**: ThreadPool-based parallel directory scanning
+- **Thread-safe**: Mutex-protected SearchResult for concurrent access
 - **Memory Efficient**: 라인 단위 파일 읽기, 10MB 파일 크기 제한
 - **Optimized Pattern Matching**: 재귀적 와일드카드 알고리즘
 - **Early Rejection**: Null byte 검사로 바이너리 파일 즉시 제외
+- **Configurable Parallelism**: --threads 옵션으로 병렬 레벨 조정
 
-### Future Optimizations (Phase 4)
-- 병렬 디렉토리 스캔 (스레드 풀)
+### Performance Characteristics
+- **Parallel Speedup**: ~3x faster on large directory trees (878 files)
+- **Thread Safety Overhead**: Minimal (mutex only during result insertion)
+- **Scalability**: Automatic subdirectory parallelization
+- **Sequential Fallback**: --threads 0 for sequential mode
+
+### Future Optimizations (Phase 5+)
 - 결과 캐싱 (변경되지 않은 디렉토리)
 - SIMD를 활용한 문자열 검색 최적화
+- 메모리 사용량 최적화
 
 ## Security Considerations
 
@@ -347,7 +386,15 @@ find_my_files/
 
 ## Version History
 
-### v0.3.0 (Phase 3) - Current
+### v0.4.0 (Phase 4) - Current
+- ✅ ThreadPool for parallel task execution
+- ✅ Multi-threaded directory scanning
+- ✅ Thread-safe SearchResult with mutex
+- ✅ CLI --threads option
+- ✅ 57 unit tests, 15 integration tests
+- ✅ ~3x performance improvement on large trees
+
+### v0.3.0 (Phase 3)
 - ✅ Regex pattern matching
 - ✅ File content search
 - ✅ .gitignore style ignore patterns

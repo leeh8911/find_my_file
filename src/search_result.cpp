@@ -7,13 +7,19 @@ namespace fmf
 
 void SearchResult::addFile(const FileInfo& fileInfo)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     files_.push_back(fileInfo);
 }
 
-void SearchResult::clear() { files_.clear(); }
+void SearchResult::clear()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    files_.clear();
+}
 
 void SearchResult::sortByName(bool ascending)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     std::sort(files_.begin(), files_.end(),
               [ascending](const FileInfo& a, const FileInfo& b)
               {
@@ -30,6 +36,7 @@ void SearchResult::sortByName(bool ascending)
 
 void SearchResult::sortBySize(bool ascending)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     std::sort(files_.begin(), files_.end(),
               [ascending](const FileInfo& a, const FileInfo& b)
               {
@@ -46,6 +53,7 @@ void SearchResult::sortBySize(bool ascending)
 
 void SearchResult::sortByTime(bool ascending)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     std::sort(files_.begin(), files_.end(),
               [ascending](const FileInfo& a, const FileInfo& b)
               {

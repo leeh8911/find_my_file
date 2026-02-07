@@ -10,6 +10,7 @@
 #include "ignore_patterns.h"
 #include "search_criteria.h"
 #include "search_result.h"
+#include "thread_pool.h"
 
 namespace fmf
 {
@@ -58,10 +59,13 @@ class FileScanner
      * @param recursive Whether to scan recursively
      * @param criteria Search criteria to apply
      * @param maxDepth Maximum depth for recursive scan (-1 for unlimited)
+     * @param threadCount Number of threads for parallel scanning (0 for
+     * sequential)
      * @return SearchResult containing files matching the criteria
      */
     SearchResult search(const std::filesystem::path& dirPath, bool recursive,
-                        const SearchCriteria& criteria, int maxDepth = -1);
+                        const SearchCriteria& criteria, int maxDepth = -1,
+                        size_t threadCount = 0);
 
     /**
      * @brief Set whether to follow symbolic links
@@ -103,7 +107,17 @@ class FileScanner
     void scanRecursiveImpl(const std::filesystem::path& dirPath,
                            int currentDepth, int maxDepth,
                            SearchResult& result);
-
+    /**
+     * @brief Parallel recursive scan implementation
+     * @param dirPath Current directory path
+     * @param currentDepth Current recursion depth
+     * @param maxDepth Maximum depth (-1 for unlimited)
+     * @param result Result container to populate
+     * @param pool Thread pool for parallel execution
+     */
+    void scanRecursiveParallel(const std::filesystem::path& dirPath,
+                               int currentDepth, int maxDepth,
+                               SearchResult& result, ThreadPool& pool);
     /**
      * @brief Check if a path should be processed
      * @param path Path to check
