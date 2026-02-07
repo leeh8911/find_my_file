@@ -12,7 +12,7 @@
 ### 1. [workflow.instructions.md](workflow.instructions.md) ⭐ **필수**
 프로젝트 워크플로우의 핵심 규칙
 - `todos.md` 기반 작업 관리 (Single Source of Truth)
-- Phase 단위 브랜치 전략
+- `feat/<task-id>` 브랜치 전략
 - Agent 작업 절차
 - 병합 정책
 
@@ -97,7 +97,7 @@ C++ 코딩 표준
 
 ### 새 작업을 시작할 때
 1. **`docs/todos.md`를 읽고** 다음 작업 확인
-2. **Phase 브랜치 생성** (`phase/<name>`)
+2. **작업 브랜치 생성** (`feat/<task-id>`)
 3. **TDD 사이클 시작** (RED → GREEN → REFACTOR)
 4. **단계별 커밋**
 5. **`todos.md` 업데이트** (`docs:` prefix)
