@@ -74,17 +74,32 @@
 - [ ] 단위 테스트: FAISS 기본 동작
 - [ ] 통합 테스트: 대량 벡터 인덱싱/검색
 
-### 4. OpenAI Embedding Provider
-- [ ] OpenAIProvider 클래스 구현
-  - [ ] HTTP client 통합 (libcurl or cpp-httplib)
-  - [ ] API 키 관리 (환경변수/config)
-  - [ ] Rate limiting 처리
-  - [ ] Retry logic with exponential backoff
-- [ ] 에러 처리
-  - [ ] Network error → fallback to traditional search
-  - [ ] API error → 명확한 에러 메시지
-- [ ] 단위 테스트: HTTP mock
-- [ ] 통합 테스트: 실제 API 호출 (CI skip 가능)
+### 4. LocalEmbeddingProvider (로컬 모델 기반) 🔴 우선순위
+- [ ] LocalEmbeddingProvider 클래스 구현
+  - [ ] ONNX Runtime 통합
+  - [ ] Sentence-BERT 모델 로드 (all-MiniLM-L6-v2 추천)
+  - [ ] generateEmbedding(text) 구현
+  - [ ] batchGenerate(texts) 최적화
+  - [ ] Model 파일 관리 (~/.fmf/models/)
+- [ ] 토크나이저 통합
+  - [ ] Tokenizer 구현 (BPE or WordPiece)
+  - [ ] Vocabulary 로드
+  - [ ] Input 전처리 (lowercase, special tokens)
+- [ ] 추론 최적화
+  - [ ] Batch processing
+  - [ ] CPU 최적화 (OpenMP, BLAS)
+  - [ ] 옵션: GPU 지원 (CUDA/ROCm)
+- [ ] Model 다운로드 자동화
+  - [ ] Hugging Face Hub 통합 (선택적)
+  - [ ] Model 파일 검증 (SHA256)
+  - [ ] 처음 실행 시 자동 다운로드
+- [ ] 대안: llama.cpp 통합
+  - [ ] GGUF 모델 지원
+  - [ ] llama.cpp 빌드 통합
+  - [ ] Embedding 추출 API
+- [ ] CMake 옵션: -DENABLE_LOCAL_EMBEDDING=ON
+- [ ] 단위 테스트: 모델 로드, 추론 정확도
+- [ ] 통합 테스트: End-to-end 로컬 검색
 
 ### 5. SemanticSearcher 코어 로직 ✅ **완료**
 - [x] SemanticSearcher 클래스 구현
@@ -105,7 +120,7 @@
 - [ ] 단위 테스트: 각 메서드별 테스트
 - [ ] 통합 테스트: End-to-end 시나리오
 
-### 6. CLI 통합
+### 6. CLI 통합 (SemanticSearcher 연동)
 - [ ] CommandLineParser 확장
   - [ ] --semantic-search QUERY
   - [ ] --similar FILE
@@ -144,11 +159,18 @@
   - [ ] 검색 속도
   - [ ] 메모리 사용량
 
-### 9. Local Model 지원 (선택적, 장기)
-- [ ] ONNX Runtime 통합
-- [ ] llama.cpp 통합
-- [ ] LocalModelProvider 구현
-- [ ] Model 다운로드/관리
+### 9. OpenAI Embedding Provider (선택적, 낮은 우선순위)
+- [ ] OpenAIProvider 클래스 구현
+  - [ ] HTTP client 통합 (libcurl or cpp-httplib)
+  - [ ] API 키 관리 (환경변수/config)
+  - [ ] Rate limiting 처리
+  - [ ] Retry logic with exponential backoff
+- [ ] 에러 처리
+  - [ ] Network error → fallback to local provider
+  - [ ] API error → 명확한 에러 메시지
+- [ ] CMake 옵션: -DENABLE_OPENAI_PROVIDER=ON
+- [ ] 단위 테스트: HTTP mock
+- [ ] 통합 테스트: 실제 API 호출 (CI skip 가능)
 
 ### 10. 문서화 및 예제
 - [ ] README.md 업데이트

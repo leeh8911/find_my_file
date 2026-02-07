@@ -16,36 +16,39 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 
 # Source files
 set(SOURCES
+
     # Domain Layer
     src/domain/entities/file_info.cpp
     src/domain/entities/search_result.cpp
     src/domain/value_objects/search_criteria.cpp
-    
+
     # Application Layer
     src/application/services/pattern_matcher.cpp
     src/application/services/content_searcher.cpp
     src/application/services/ignore_patterns.cpp
     src/application/use_cases/file_scanner.cpp
     src/application/use_cases/semantic_searcher.cpp
-    
+
     # Adapters Layer
     src/adapters/cli/command_line_parser.cpp
     src/adapters/presenters/output_formatter.cpp
-    
+
     # Infrastructure Layer
     src/infrastructure/logging/logger.cpp
     src/infrastructure/config/config_file.cpp
     src/infrastructure/threading/thread_pool.cpp
+    src/infrastructure/ai/local_embedding_provider.cpp
 )
 
 # Header files
 set(HEADERS
+
     # Domain Layer
     include/domain/entities/file_info.h
     include/domain/entities/search_result.h
     include/domain/entities/semantic_result.h
     include/domain/value_objects/search_criteria.h
-    
+
     # Application Layer
     include/application/ports/i_embedding_provider.h
     include/application/ports/i_vector_store.h
@@ -54,15 +57,16 @@ set(HEADERS
     include/application/services/ignore_patterns.h
     include/application/use_cases/file_scanner.h
     include/application/use_cases/semantic_searcher.h
-    
+
     # Adapters Layer
     include/adapters/cli/command_line_parser.h
     include/adapters/presenters/output_formatter.h
-    
+
     # Infrastructure Layer
     include/infrastructure/logging/logger.h
     include/infrastructure/config/config_file.h
     include/infrastructure/threading/thread_pool.h
+    include/infrastructure/ai/local_embedding_provider.h
 )
 
 # Main executable
@@ -87,10 +91,11 @@ enable_testing()
 
 # Test executable
 add_executable(tests
+
     # Domain Layer Tests
     tests/domain/entities/test_file_info.cpp
     tests/domain/value_objects/test_search_criteria.cpp
-    
+
     # Application Layer Tests
     tests/application/services/test_pattern_matcher.cpp
     tests/application/services/test_content_searcher.cpp
@@ -98,15 +103,16 @@ add_executable(tests
     tests/application/use_cases/test_file_scanner.cpp
     tests/application/use_cases/test_semantic_interfaces.cpp
     tests/application/use_cases/test_semantic_searcher.cpp
-    
+
     # Adapters Layer Tests
     tests/adapters/test_output_formatter.cpp
-    
+
     # Infrastructure Layer Tests
     tests/infrastructure/test_logger.cpp
     tests/infrastructure/test_config_file.cpp
     tests/infrastructure/test_thread_pool.cpp
-    
+    tests/infrastructure/test_local_embedding_provider.cpp
+
     ${SOURCES}
 )
 
