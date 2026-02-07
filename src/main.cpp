@@ -3,6 +3,7 @@
 
 #include "file_info.h"
 #include "file_scanner.h"
+#include "ignore_patterns.h"
 #include "search_criteria.h"
 #include "search_result.h"
 
@@ -18,6 +19,9 @@ void printUsage(const char* programName)
         << "  -e, --ext EXT        Filter by extension (e.g., .cpp, .h)\n"
         << "  -p, --path PATTERN   Search by path pattern\n"
         << "  -i, --ignore-case    Case-insensitive search\n"
+        << "  -x, --regex          Use regular expressions for pattern "
+           "matching\n"
+        << "  -c, --content TEXT   Search within file contents\n"
         << "\nFile Type Options:\n"
         << "  -f, --files-only     Show only files (no directories)\n"
         << "  -D, --dirs-only      Show only directories\n"
@@ -28,6 +32,8 @@ void printUsage(const char* programName)
         << "  -r, --recursive      Scan directories recursively\n"
         << "  -d, --max-depth N    Maximum recursion depth (use with -r)\n"
         << "  -l, --follow-links   Follow symbolic links\n"
+        << "  --ignore FILE        Use ignore patterns from file (.gitignore "
+           "style)\n"
         << "\nOther Options:\n"
         << "  -h, --help           Display this help message\n"
         << "\nExamples:\n"
@@ -36,7 +42,10 @@ void printUsage(const char* programName)
         << "  " << programName << " -r -n '*.cpp' .\n"
         << "  " << programName << " -r -e .h -e .cpp src/\n"
         << "  " << programName << " -r -i -n '*test*' .\n"
-        << "  " << programName << " -r --min-size 1000 --max-size 100000 .\n";
+        << "  " << programName << " -r --min-size 1000 --max-size 100000 .\n"
+        << "  " << programName << " -r -x -n 'test_.*\\.cpp' .\n"
+        << "  " << programName << " -r -c 'TODO' src/\n"
+        << "  " << programName << " -r --ignore .gitignore .\n";
 }
 
 void printResults(const SearchResult& results)
@@ -70,6 +79,7 @@ int main(int argc, char* argv[])
     bool followLinks = false;
     int maxDepth = -1;
     std::string targetPath;
+    std::string ignoreFile;
 
     SearchCriteria criteria;
 
@@ -199,6 +209,34 @@ int main(int argc, char* argv[])
                 return 1;
             }
         }
+        else if (arg == "-x" || arg == "--regex")
+        {
+            criteria.setUseRegex(true);
+        }
+        else if (arg == "-c" || arg == "--content")
+        {
+            if (i + 1 < argc)
+            {
+                criteria.setContentPattern(argv[++i]);
+            }
+            else
+            {
+                std::cerr << "Error: --content requires a pattern argument\n";
+                return 1;
+            }
+        }
+        else if (arg == "--ignore")
+        {
+            if (i + 1 < argc)
+            {
+                ignoreFile = argv[++i];
+            }
+            else
+            {
+                std::cerr << "Error: --ignore requires a file path\n";
+                return 1;
+            }
+        }
         else if (arg[0] != '-')
         {
             targetPath = arg;
@@ -221,6 +259,23 @@ int main(int argc, char* argv[])
     // Create scanner and configure it
     FileScanner scanner;
     scanner.setFollowSymlinks(followLinks);
+
+    // Load ignore patterns if specified
+    if (!ignoreFile.empty())
+    {
+        IgnorePatterns ignorePatterns;
+        if (ignorePatterns.loadFromFile(ignoreFile))
+        {
+            scanner.setIgnorePatterns(ignorePatterns);
+            std::cout << "Loaded " << ignorePatterns.size()
+                      << " ignore patterns from " << ignoreFile << "\n";
+        }
+        else
+        {
+            std::cerr << "Warning: Could not load ignore file: " << ignoreFile
+                      << "\n";
+        }
+    }
 
     // Scan directory
     SearchResult results;

@@ -203,15 +203,15 @@ bool FileScanner::matchesCriteria(const FileInfo& fileInfo,
         {
             // Use regex matching
             matches = PatternMatcher::matchRegex(criteria.getNamePattern(),
-                                                fileInfo.getFileName(),
-                                                criteria.isCaseSensitive());
+                                                 fileInfo.getFileName(),
+                                                 criteria.isCaseSensitive());
         }
         else
         {
             // Use wildcard matching
             matches = PatternMatcher::matchWildcard(criteria.getNamePattern(),
-                                                   fileInfo.getFileName(),
-                                                   criteria.isCaseSensitive());
+                                                    fileInfo.getFileName(),
+                                                    criteria.isCaseSensitive());
         }
 
         if (!matches)
@@ -228,14 +228,14 @@ bool FileScanner::matchesCriteria(const FileInfo& fileInfo,
         if (criteria.isUseRegex())
         {
             matches = PatternMatcher::matchRegex(criteria.getPathPattern(),
-                                                fileInfo.getPath(),
-                                                criteria.isCaseSensitive());
+                                                 fileInfo.getPath(),
+                                                 criteria.isCaseSensitive());
         }
         else
         {
             matches = PatternMatcher::matchWildcard(criteria.getPathPattern(),
-                                                   fileInfo.getPath(),
-                                                   criteria.isCaseSensitive());
+                                                    fileInfo.getPath(),
+                                                    criteria.isCaseSensitive());
         }
 
         if (!matches)
@@ -311,10 +311,9 @@ bool FileScanner::matchesCriteria(const FileInfo& fileInfo,
     // Check content pattern (only for regular files)
     if (criteria.hasContentPattern() && fileInfo.isRegularFile())
     {
-        if (!ContentSearcher::searchInFile(fileInfo.getPath(),
-                                          criteria.getContentPattern(),
-                                          criteria.isUseRegex(),
-                                          criteria.isCaseSensitive()))
+        if (!ContentSearcher::searchInFile(
+                fileInfo.getPath(), criteria.getContentPattern(),
+                criteria.isUseRegex(), criteria.isCaseSensitive()))
         {
             return false;
         }
