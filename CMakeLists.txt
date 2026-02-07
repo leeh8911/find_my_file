@@ -23,6 +23,7 @@ set(SOURCES
     src/pattern_matcher.cpp
     src/content_searcher.cpp
     src/ignore_patterns.cpp
+    src/thread_pool.cpp
 )
 
 # Header files
@@ -34,6 +35,7 @@ set(HEADERS
     include/pattern_matcher.h
     include/content_searcher.h
     include/ignore_patterns.h
+    include/thread_pool.h
 )
 
 # Main executable
@@ -64,11 +66,13 @@ add_executable(tests
     tests/test_search_criteria.cpp
     tests/test_content_searcher.cpp
     tests/test_ignore_patterns.cpp
+    tests/test_thread_pool.cpp
     ${SOURCES}
 )
 
 target_link_libraries(tests
     GTest::gtest_main
+    pthread
 )
 
 include(GoogleTest)
