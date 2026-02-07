@@ -75,18 +75,25 @@
 - [ ] 통합 테스트: 대량 벡터 인덱싱/검색
 
 ### 4. LocalEmbeddingProvider (로컬 모델 기반) 🔴 우선순위
-- [ ] LocalEmbeddingProvider 클래스 구현
-  - [ ] ONNX Runtime 통합
-  - [ ] Sentence-BERT 모델 로드 (all-MiniLM-L6-v2 추천)
-  - [ ] generateEmbedding(text) 구현
-  - [ ] batchGenerate(texts) 최적화
-  - [ ] Model 파일 관리 (~/.fmf/models/)
-- [ ] 토크나이저 통합
-  - [ ] Tokenizer 구현 (BPE or WordPiece)
-  - [ ] Vocabulary 로드
-  - [ ] Input 전처리 (lowercase, special tokens)
+- [x] LocalEmbeddingProvider 클래스 구현 ✅ **완료**
+  - [x] 기본 구조 (Pimpl idiom)
+  - [x] IEmbeddingProvider 인터페이스 구현
+  - [x] generateEmbedding(text) 구현 (placeholder)
+  - [x] batchGenerate(texts) 최적화
+  - [x] Model 파일 관리 (~/.fmf/models/)
+  - [ ] ONNX Runtime 통합 (TODO)
+  - [ ] Sentence-BERT 모델 로드 (all-MiniLM-L6-v2)
+- [x] 토크나이저 통합 ✅ **완료**
+  - [x] SimpleTokenizer 구현 (whitespace 기반)
+  - [x] Lowercase conversion
+  - [x] Punctuation stripping
+  - [x] Special tokens ([CLS], [SEP], [PAD], [UNK])
+  - [x] Max sequence length (512)
+  - [ ] Proper BPE/WordPiece tokenizer (TODO)
+  - [ ] Vocabulary 로드 (TODO)
 - [ ] 추론 최적화
-  - [ ] Batch processing
+  - [ ] ONNX Runtime 통합
+  - [ ] Batch processing 최적화
   - [ ] CPU 최적화 (OpenMP, BLAS)
   - [ ] 옵션: GPU 지원 (CUDA/ROCm)
 - [ ] Model 다운로드 자동화
@@ -97,9 +104,12 @@
   - [ ] GGUF 모델 지원
   - [ ] llama.cpp 빌드 통합
   - [ ] Embedding 추출 API
-- [ ] CMake 옵션: -DENABLE_LOCAL_EMBEDDING=ON
-- [ ] 단위 테스트: 모델 로드, 추론 정확도
+- [x] CMake 옵션: -DENABLE_LOCAL_EMBEDDING=ON ✅
+- [x] 단위 테스트: 26개 테스트 (LocalEmbeddingProvider 13 + SimpleTokenizer 13) ✅
 - [ ] 통합 테스트: End-to-end 로컬 검색
+- 커밋: 
+  * def98a3 "feat: implement LocalEmbeddingProvider"
+  * 5880b17 "feat: add SimpleTokenizer with improved tokenization"
 
 ### 5. SemanticSearcher 코어 로직 ✅ **완료**
 - [x] SemanticSearcher 클래스 구현
@@ -489,16 +499,26 @@ Everything 스타일의 빠르고 직관적인 데스크톱 GUI 제공. CLI와 D
 
 ## 현재 진행 상황
 - **완료된 Phase**: 1, 2, 3, 5, 6, 8, 9, 11 (8개 Phase) ✅
-- **부분 완료**: Phase 4 (멀티스레딩만), Phase 7 (성능 테스트만 미완), Phase 10 (인터페이스, Mock, 코어 로직만)
-- **진행 예정**: Phase 10 (Semantic Search - FAISS, OpenAI Provider, CLI 통합) 🔴 최우선
+- **부분 완료**: 
+  * Phase 4 (멀티스레딩만), 
+  * Phase 7 (성능 테스트만 미완), 
+  * Phase 10 (인터페이스, Mock, 코어 로직, **LocalEmbeddingProvider, SimpleTokenizer**)
+- **진행 중**: Phase 10 (Semantic Search - ONNX 통합, FAISS, CLI 통합) 🔴 최우선
 - **설계 완료**: Phase 12 (GUI - architecture.md에 완전한 설계 문서화) ✅
 
 ### 프로젝트 통계
-- **완료율**: ~75% (핵심 검색 기능 완성, Semantic Search 기반 완료, GUI 설계 완료)
-- **총 코드**: ~4,300 라인 (헤더 + 구현)
-- **총 테스트**: 114 단위 테스트 + 40 통합 테스트 = 154 테스트
+- **완료율**: ~78% (핵심 검색 기능 완성, Semantic Search 기반 완료, LocalEmbedding 구현)
+- **총 코드**: ~4,600 라인 (헤더 + 구현)
+- **총 테스트**: 140 단위 테스트 + 40 통합 테스트 = 180 테스트 (+26 from Phase 10.4)
 - **테스트 통과율**: 100%
 - **아키텍처**: Clean Architecture 4계층 구조 (Domain, Application, Adapters, Infrastructure)
+
+### 최근 완료 작업 (Phase 10.4)
+- ✅ LocalEmbeddingProvider 기본 구조 (Pimpl, placeholder 추론)
+- ✅ SimpleTokenizer (lowercase, punctuation, special tokens)
+- ✅ CMake 빌드 옵션 (ENABLE_LOCAL_EMBEDDING)
+- ✅ 26개 단위 테스트 (LocalEmbedding 13 + Tokenizer 13)
+- **커밋**: def98a3, 5880b17
 
 ### 다음 작업 우선순위
 1. **Phase 10 완료** 🔴 (FAISS VectorStore, OpenAI Provider, CLI 통합)
