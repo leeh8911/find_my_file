@@ -30,6 +30,7 @@ TESTS=(
     "uc_regex_search.sh"
     "uc_content_search.sh"
     "uc_ignore_patterns.sh"
+    "uc_parallel_scan.sh"
 )
 
 PASSED=0
