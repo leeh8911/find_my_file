@@ -4,6 +4,7 @@
 #include "file_info.h"
 #include "file_scanner.h"
 #include "ignore_patterns.h"
+#include "output_formatter.h"
 #include "search_criteria.h"
 #include "search_result.h"
 
@@ -36,6 +37,10 @@ void printUsage(const char* programName)
            "style)\n"
         << "  -j, --threads N      Number of threads for parallel scanning "
            "(0=sequential)\n"
+        << "\nOutput Options:\n"
+        << "  --format FORMAT      Output format: default, detailed, json\n"
+        << "  --color              Enable colored output\n"
+        << "  --no-color           Disable colored output\n"
         << "\nOther Options:\n"
         << "  -h, --help           Display this help message\n"
         << "\nExamples:\n"
@@ -47,27 +52,14 @@ void printUsage(const char* programName)
         << "  " << programName << " -r --min-size 1000 --max-size 100000 .\n"
         << "  " << programName << " -r -x -n 'test_.*\\.cpp' .\n"
         << "  " << programName << " -r -c 'TODO' src/\n"
-        << "  " << programName << " -r --ignore .gitignore .\n";
+        << "  " << programName << " -r --ignore .gitignore .\n"
+        << "  " << programName << " -r --format json . > results.json\n"
+        << "  " << programName << " -r --format detailed --color .\n";
 }
 
-void printResults(const SearchResult& results)
-{
-    std::cout << "\nFound " << results.size() << " items:\n";
-    std::cout << std::string(80, '-') << "\n";
+// Removed printResults() - now using OutputFormatter
 
-    for (const auto& fileInfo : results)
-    {
-        std::string type = fileInfo.isDirectory()      ? "[DIR]"
-                           : fileInfo.isSymbolicLink() ? "[LINK]"
-                                                       : "[FILE]";
-
-        std::cout << std::left << std::setw(8) << type << std::setw(12)
-                  << std::right << fileInfo.getSize() << "  "
-                  << fileInfo.getPath() << "\n";
-    }
-
-    std::cout << std::string(80, '-') << "\n";
-}
+// Removed printResults() - now using OutputFormatter
 
 int main(int argc, char* argv[])
 {
@@ -83,6 +75,8 @@ int main(int argc, char* argv[])
     size_t threadCount = 0;  // 0 = sequential
     std::string targetPath;
     std::string ignoreFile;
+    OutputFormat outputFormat = OutputFormat::Default;
+    bool useColor = false;
 
     SearchCriteria criteria;
 
@@ -267,6 +261,44 @@ int main(int argc, char* argv[])
                 return 1;
             }
         }
+        else if (arg == "--format")
+        {
+            if (i + 1 < argc)
+            {
+                std::string format = argv[++i];
+                if (format == "default")
+                {
+                    outputFormat = OutputFormat::Default;
+                }
+                else if (format == "detailed")
+                {
+                    outputFormat = OutputFormat::Detailed;
+                }
+                else if (format == "json")
+                {
+                    outputFormat = OutputFormat::JSON;
+                }
+                else
+                {
+                    std::cerr << "Error: Unknown format '" << format
+                              << "'. Valid: default, detailed, json\n";
+                    return 1;
+                }
+            }
+            else
+            {
+                std::cerr << "Error: --format requires an argument\n";
+                return 1;
+            }
+        }
+        else if (arg == "--color")
+        {
+            useColor = true;
+        }
+        else if (arg == "--no-color")
+        {
+            useColor = false;
+        }
         else if (arg[0] != '-')
         {
             targetPath = arg;
@@ -339,7 +371,9 @@ int main(int argc, char* argv[])
                           : scanner.scanDirectory(targetPath);
         }
 
-        printResults(results);
+        // Print results using OutputFormatter
+        OutputFormatter formatter(outputFormat, useColor);
+        formatter.print(results);
     }
     catch (const std::exception& e)
     {
