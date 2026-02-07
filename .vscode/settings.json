@@ -1,0 +1,10 @@
+{
+    "cSpell.words": [
+        "Allman"
+    ],
+    "chat.tools.terminal.autoApprove": {
+        "mkdir": true,
+        "cmake": true,
+        "make": true
+    }
+}
