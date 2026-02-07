@@ -25,6 +25,7 @@ set(SOURCES
     src/ignore_patterns.cpp
     src/thread_pool.cpp
     src/output_formatter.cpp
+    src/command_line_parser.cpp
 )
 
 # Header files
@@ -38,6 +39,7 @@ set(HEADERS
     include/ignore_patterns.h
     include/thread_pool.h
     include/output_formatter.h
+    include/command_line_parser.h
 )
 
 # Main executable

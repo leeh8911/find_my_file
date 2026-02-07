@@ -12,6 +12,22 @@ namespace fmf
 
 /**
  * @brief Search criteria for file filtering
+ *
+ * This class encapsulates all search parameters and filters.
+ * Follows the Single Responsibility Principle (SRP) by only managing
+ * search criteria without performing actual filtering logic.
+ *
+ * Uses the Builder pattern for fluent API configuration:
+ * @code
+ *   SearchCriteria criteria;
+ *   criteria.setNamePattern("*.cpp")
+ *          .setCaseSensitive(false)
+ *          .setMinSize(1024);
+ * @endcode
+ *
+ * @note Thread-safe for reading after configuration.
+ * @note All setters return void for simplicity, but could be chained
+ *       by returning *this in future refactoring.
  */
 class SearchCriteria
 {

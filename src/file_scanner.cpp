@@ -8,6 +8,10 @@
 namespace fmf
 {
 
+/**
+ * @brief Scan a directory non-recursively
+ * @throws std::filesystem::filesystem_error on access errors
+ */
 SearchResult FileScanner::scanDirectory(const std::filesystem::path& dirPath)
 {
     SearchResult result;
@@ -51,6 +55,12 @@ SearchResult FileScanner::scanDirectory(const std::filesystem::path& dirPath)
     return result;
 }
 
+/**
+ * @brief Scan a directory recursively with depth limit
+ * @param dirPath Directory to scan
+ * @param maxDepth Maximum depth (-1 for unlimited)
+ * @return SearchResult containing all found files
+ */
 SearchResult FileScanner::scanDirectoryRecursive(
     const std::filesystem::path& dirPath, int maxDepth)
 {

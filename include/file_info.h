@@ -21,6 +21,24 @@ enum class FileType
 
 /**
  * @brief Represents information about a file or directory
+ *
+ * This class encapsulates file system entry metadata and type information.
+ * It follows the Single Responsibility Principle (SRP) by only handling
+ * file information retrieval and storage, without any search or filtering
+ * logic.
+ *
+ * @note This class is immutable after construction and thread-safe for reading.
+ * @note Uses std::filesystem for cross-platform compatibility.
+ *
+ * Example usage:
+ * @code
+ *   FileInfo info("/path/to/file.txt");
+ *   std::cout << "Name: " << info.getFileName() << "\n";
+ *   std::cout << "Size: " << info.getSize() << " bytes\n";
+ *   if (info.isRegularFile()) {
+ *       // Process file
+ *   }
+ * @endcode
  */
 class FileInfo
 {

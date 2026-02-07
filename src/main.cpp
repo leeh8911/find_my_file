@@ -1,378 +1,116 @@
-#include <iomanip>
+/**
+ * @file main.cpp
+ * @brief Main entry point for find_my_files application
+ *
+ * This file contains the main function which orchestrates the file searching
+ * process by:
+ * 1. Parsing command line arguments using Command LineParser
+ * 2. Configuring and executing the file scanner
+ * 3. Formatting and displaying results using OutputFormatter
+ *
+ * The main function follows the Dependency Inversion Principle by depending
+ * on abstractions (SearchCriteria, OutputFormatter) rather than concrete
+ * implementations.
+ */
+
 #include <iostream>
 
-#include "file_info.h"
+#include "command_line_parser.h"
 #include "file_scanner.h"
 #include "ignore_patterns.h"
 #include "output_formatter.h"
-#include "search_criteria.h"
-#include "search_result.h"
 
 using namespace fmf;
 
-void printUsage(const char* programName)
-{
-    std::cout
-        << "Usage: " << programName << " [OPTIONS] <directory>\n"
-        << "\nSearch Options:\n"
-        << "  -n, --name PATTERN   Search by file name (supports wildcards * "
-           "and ?)\n"
-        << "  -e, --ext EXT        Filter by extension (e.g., .cpp, .h)\n"
-        << "  -p, --path PATTERN   Search by path pattern\n"
-        << "  -i, --ignore-case    Case-insensitive search\n"
-        << "  -x, --regex          Use regular expressions for pattern "
-           "matching\n"
-        << "  -c, --content TEXT   Search within file contents\n"
-        << "\nFile Type Options:\n"
-        << "  -f, --files-only     Show only files (no directories)\n"
-        << "  -D, --dirs-only      Show only directories\n"
-        << "\nSize Options:\n"
-        << "  --min-size SIZE      Minimum file size in bytes\n"
-        << "  --max-size SIZE      Maximum file size in bytes\n"
-        << "\nTraversal Options:\n"
-        << "  -r, --recursive      Scan directories recursively\n"
-        << "  -d, --max-depth N    Maximum recursion depth (use with -r)\n"
-        << "  -l, --follow-links   Follow symbolic links\n"
-        << "  --ignore FILE        Use ignore patterns from file (.gitignore "
-           "style)\n"
-        << "  -j, --threads N      Number of threads for parallel scanning "
-           "(0=sequential)\n"
-        << "\nOutput Options:\n"
-        << "  --format FORMAT      Output format: default, detailed, json\n"
-        << "  --color              Enable colored output\n"
-        << "  --no-color           Disable colored output\n"
-        << "\nOther Options:\n"
-        << "  -h, --help           Display this help message\n"
-        << "\nExamples:\n"
-        << "  " << programName << " .\n"
-        << "  " << programName << " -r /home/user\n"
-        << "  " << programName << " -r -n '*.cpp' .\n"
-        << "  " << programName << " -r -e .h -e .cpp src/\n"
-        << "  " << programName << " -r -i -n '*test*' .\n"
-        << "  " << programName << " -r --min-size 1000 --max-size 100000 .\n"
-        << "  " << programName << " -r -x -n 'test_.*\\.cpp' .\n"
-        << "  " << programName << " -r -c 'TODO' src/\n"
-        << "  " << programName << " -r --ignore .gitignore .\n"
-        << "  " << programName << " -r --format json . > results.json\n"
-        << "  " << programName << " -r --format detailed --color .\n";
-}
-
-// Removed printResults() - now using OutputFormatter
-
-// Removed printResults() - now using OutputFormatter
-
+/**
+ * @brief Main entry point
+ *
+ * Orchestrates the entire file search workflow:
+ * - Parses CLI arguments using CommandLineParser (SRP)
+ * - Configures file scanner with search criteria
+ * - Executes search with optional parallelization
+ * - Formats and outputs results using OutputFormatter
+ *
+ * @param argc Argument count
+ * @param argv Argument vector
+ * @return 0 on success, 1 on error
+ */
 int main(int argc, char* argv[])
 {
-    if (argc < 2)
+    // Parse command line arguments using CommandLineParser (SRP: separated
+    // parsing logic)
+    CommandLineParser parser;
+    auto configOpt = parser.parse(argc, argv);
+
+    if (!configOpt)
     {
-        printUsage(argv[0]);
-        return 1;
+        // Parse failed or help requested
+        parser.printUsage(argv[0]);
+        return argc < 2 ? 1 : 0;  // Return 0 for help, 1 for error
     }
 
-    bool recursive = false;
-    bool followLinks = false;
-    int maxDepth = -1;
-    size_t threadCount = 0;  // 0 = sequential
-    std::string targetPath;
-    std::string ignoreFile;
-    OutputFormat outputFormat = OutputFormat::Default;
-    bool useColor = false;
+    const ApplicationConfig& config = *configOpt;
 
-    SearchCriteria criteria;
-
-    // Parse command line arguments
-    for (int i = 1; i < argc; ++i)
-    {
-        std::string arg = argv[i];
-
-        if (arg == "-h" || arg == "--help")
-        {
-            printUsage(argv[0]);
-            return 0;
-        }
-        else if (arg == "-r" || arg == "--recursive")
-        {
-            recursive = true;
-        }
-        else if (arg == "-l" || arg == "--follow-links")
-        {
-            followLinks = true;
-        }
-        else if (arg == "-i" || arg == "--ignore-case")
-        {
-            criteria.setCaseSensitive(false);
-        }
-        else if (arg == "-f" || arg == "--files-only")
-        {
-            criteria.setFilesOnly(true);
-        }
-        else if (arg == "-D" || arg == "--dirs-only")
-        {
-            criteria.setDirectoriesOnly(true);
-        }
-        else if (arg == "-d" || arg == "--max-depth")
-        {
-            if (i + 1 < argc)
-            {
-                try
-                {
-                    maxDepth = std::stoi(argv[++i]);
-                }
-                catch (...)
-                {
-                    std::cerr << "Error: Invalid depth value\n";
-                    return 1;
-                }
-            }
-            else
-            {
-                std::cerr << "Error: --max-depth requires a numeric argument\n";
-                return 1;
-            }
-        }
-        else if (arg == "-n" || arg == "--name")
-        {
-            if (i + 1 < argc)
-            {
-                criteria.setNamePattern(argv[++i]);
-            }
-            else
-            {
-                std::cerr << "Error: --name requires a pattern argument\n";
-                return 1;
-            }
-        }
-        else if (arg == "-e" || arg == "--ext")
-        {
-            if (i + 1 < argc)
-            {
-                criteria.addExtension(argv[++i]);
-            }
-            else
-            {
-                std::cerr << "Error: --ext requires an extension argument\n";
-                return 1;
-            }
-        }
-        else if (arg == "-p" || arg == "--path")
-        {
-            if (i + 1 < argc)
-            {
-                criteria.setPathPattern(argv[++i]);
-            }
-            else
-            {
-                std::cerr << "Error: --path requires a pattern argument\n";
-                return 1;
-            }
-        }
-        else if (arg == "--min-size")
-        {
-            if (i + 1 < argc)
-            {
-                try
-                {
-                    criteria.setMinSize(std::stoull(argv[++i]));
-                }
-                catch (...)
-                {
-                    std::cerr << "Error: Invalid min-size value\n";
-                    return 1;
-                }
-            }
-            else
-            {
-                std::cerr << "Error: --min-size requires a numeric argument\n";
-                return 1;
-            }
-        }
-        else if (arg == "--max-size")
-        {
-            if (i + 1 < argc)
-            {
-                try
-                {
-                    criteria.setMaxSize(std::stoull(argv[++i]));
-                }
-                catch (...)
-                {
-                    std::cerr << "Error: Invalid max-size value\n";
-                    return 1;
-                }
-            }
-            else
-            {
-                std::cerr << "Error: --max-size requires a numeric argument\n";
-                return 1;
-            }
-        }
-        else if (arg == "-x" || arg == "--regex")
-        {
-            criteria.setUseRegex(true);
-        }
-        else if (arg == "-c" || arg == "--content")
-        {
-            if (i + 1 < argc)
-            {
-                criteria.setContentPattern(argv[++i]);
-            }
-            else
-            {
-                std::cerr << "Error: --content requires a pattern argument\n";
-                return 1;
-            }
-        }
-        else if (arg == "--ignore")
-        {
-            if (i + 1 < argc)
-            {
-                ignoreFile = argv[++i];
-            }
-            else
-            {
-                std::cerr << "Error: --ignore requires a file path\n";
-                return 1;
-            }
-        }
-        else if (arg == "-j" || arg == "--threads")
-        {
-            if (i + 1 < argc)
-            {
-                try
-                {
-                    int threads = std::stoi(argv[++i]);
-                    if (threads < 0)
-                    {
-                        std::cerr
-                            << "Error: Thread count must be non-negative\n";
-                        return 1;
-                    }
-                    threadCount = static_cast<size_t>(threads);
-                }
-                catch (...)
-                {
-                    std::cerr << "Error: Invalid thread count value\n";
-                    return 1;
-                }
-            }
-            else
-            {
-                std::cerr << "Error: --threads requires a numeric argument\n";
-                return 1;
-            }
-        }
-        else if (arg == "--format")
-        {
-            if (i + 1 < argc)
-            {
-                std::string format = argv[++i];
-                if (format == "default")
-                {
-                    outputFormat = OutputFormat::Default;
-                }
-                else if (format == "detailed")
-                {
-                    outputFormat = OutputFormat::Detailed;
-                }
-                else if (format == "json")
-                {
-                    outputFormat = OutputFormat::JSON;
-                }
-                else
-                {
-                    std::cerr << "Error: Unknown format '" << format
-                              << "'. Valid: default, detailed, json\n";
-                    return 1;
-                }
-            }
-            else
-            {
-                std::cerr << "Error: --format requires an argument\n";
-                return 1;
-            }
-        }
-        else if (arg == "--color")
-        {
-            useColor = true;
-        }
-        else if (arg == "--no-color")
-        {
-            useColor = false;
-        }
-        else if (arg[0] != '-')
-        {
-            targetPath = arg;
-        }
-        else
-        {
-            std::cerr << "Error: Unknown option: " << arg << "\n";
-            printUsage(argv[0]);
-            return 1;
-        }
-    }
-
-    if (targetPath.empty())
-    {
-        std::cerr << "Error: No directory specified\n";
-        printUsage(argv[0]);
-        return 1;
-    }
-
-    // Create scanner and configure it
+    // Create and configure file scanner
     FileScanner scanner;
-    scanner.setFollowSymlinks(followLinks);
+    scanner.setFollowSymlinks(config.followLinks);
 
     // Load ignore patterns if specified
-    if (!ignoreFile.empty())
+    if (!config.ignoreFile.empty())
     {
         IgnorePatterns ignorePatterns;
-        if (ignorePatterns.loadFromFile(ignoreFile))
+        if (ignorePatterns.loadFromFile(config.ignoreFile))
         {
             scanner.setIgnorePatterns(ignorePatterns);
             std::cout << "Loaded " << ignorePatterns.size()
-                      << " ignore patterns from " << ignoreFile << "\n";
+                      << " ignore patterns from " << config.ignoreFile << "\n";
         }
         else
         {
-            std::cerr << "Warning: Could not load ignore file: " << ignoreFile
-                      << "\n";
+            std::cerr << "Warning: Could not load ignore file: "
+                      << config.ignoreFile << "\n";
         }
     }
 
-    // Scan directory
+    // Execute file search
     SearchResult results;
     try
     {
+        // Display scanning status
         std::cout << "Scanning";
-        if (recursive)
+        if (config.recursive)
         {
             std::cout << " recursively";
-            if (maxDepth >= 0)
+            if (config.maxDepth >= 0)
             {
-                std::cout << " (max depth: " << maxDepth << ")";
+                std::cout << " (max depth: " << config.maxDepth << ")";
             }
         }
-        if (threadCount > 0 && recursive)
+        if (config.threadCount > 0)
         {
-            std::cout << " using " << threadCount << " threads";
+            std::cout << " with " << config.threadCount << " threads";
         }
         std::cout << "...\n";
 
-        // Use search if criteria is set, otherwise just scan
-        if (!criteria.isEmpty())
+        // Perform search based on whether criteria is set
+        if (!config.criteria.isEmpty())
         {
-            results = scanner.search(targetPath, recursive, criteria, maxDepth,
-                                     threadCount);
+            results = scanner.search(config.targetPath, config.recursive,
+                                     config.criteria, config.maxDepth,
+                                     config.threadCount);
         }
         else
         {
-            results = recursive
-                          ? scanner.scanDirectoryRecursive(targetPath, maxDepth)
-                          : scanner.scanDirectory(targetPath);
+            // Simple scan without filtering
+            results = config.recursive
+                          ? scanner.scanDirectoryRecursive(config.targetPath,
+                                                           config.maxDepth)
+                          : scanner.scanDirectory(config.targetPath);
         }
 
-        // Print results using OutputFormatter
-        OutputFormatter formatter(outputFormat, useColor);
+        // Format and print results using OutputFormatter (SRP: separated
+        // formatting logic)
+        OutputFormatter formatter(config.outputFormat, config.useColor);
         formatter.print(results);
     }
     catch (const std::exception& e)

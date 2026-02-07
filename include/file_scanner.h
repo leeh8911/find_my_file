@@ -17,6 +17,34 @@ namespace fmf
 
 /**
  * @brief Scanner for traversing and searching files
+ *
+ * This class provides directory traversal and file searching capabilities.
+ * It coordinates between PatternMatcher, ContentSearcher, and IgnorePatterns
+ * to perform comprehensive file searches.
+ *
+ * SOLID Principles:
+ * - SRP: Focuses on directory traversal and coordination
+ * - OCP: Extensible through SearchCriteria without modifying scanner code
+ * - DIP: Depends on SearchCriteria abstraction, not concrete implementations
+ *
+ * Features:
+ * - Recursive directory traversal with depth control
+ * - Parallel scanning using ThreadPool
+ * - Symbolic link handling
+ * - .gitignore-style ignore patterns
+ * - Content-based search
+ *
+ * Example usage:
+ * @code
+ *   FileScanner scanner;
+ *   scanner.setFollowSymlinks(true);
+ *   SearchCriteria criteria;
+ *   criteria.setNamePattern("*.cpp");
+ *   auto results = scanner.search("/path", true, criteria);
+ * @endcode
+ *
+ * @note Thread-safe when using parallel scanning
+ * @note Configurable through setFollowSymlinks() and setIgnorePatterns()
  */
 class FileScanner
 {

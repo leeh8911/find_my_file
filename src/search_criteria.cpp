@@ -5,11 +5,21 @@
 namespace fmf
 {
 
+/**
+ * @brief Set the name pattern for matching
+ * @param pattern Wildcard or regex pattern
+ * @note Pattern interpretation depends on useRegex flag
+ */
 void SearchCriteria::setNamePattern(const std::string& pattern)
 {
     namePattern_ = pattern;
 }
 
+/**
+ * @brief Set file extensions to filter by
+ * @param extensions Vector of extensions (with or without leading dot)
+ * @note Automatically adds leading dot if missing
+ */
 void SearchCriteria::setExtensions(const std::vector<std::string>& extensions)
 {
     extensions_ = extensions;

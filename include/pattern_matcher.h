@@ -9,6 +9,28 @@ namespace fmf
 
 /**
  * @brief Utility class for pattern matching with wildcard support
+ *
+ * Provides static methods for various pattern matching strategies.
+ * Follows the Open/Closed Principle (OCP) by supporting multiple
+ * matching strategies through static methods.
+ *
+ * Supported patterns:
+ * - Wildcards: * (any sequence), ? (single character)
+ * - Regular expressions: Full std::regex support
+ * - Exact matching: Case-sensitive/insensitive
+ *
+ * Example usage:
+ * @code
+ *   // Wildcard matching
+ *   bool match = PatternMatcher::matchWildcard("*.cpp", "file.cpp", true);
+ *
+ *   // Regex matching
+ *   bool match = PatternMatcher::matchRegex("test_.*\\.cpp", "test_1.cpp");
+ * @endcode
+ *
+ * @note All methods are static and thread-safe
+ * @note Wildcard matching uses recursive algorithm for correctness
+ * @note Regex errors are propagated as std::regex_error exceptions
  */
 class PatternMatcher
 {

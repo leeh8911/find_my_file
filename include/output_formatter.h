@@ -39,8 +39,35 @@ enum class Color
 /**
  * @brief Output formatter for search results
  *
- * Handles different output formats (default, detailed, JSON)
- * and terminal color support.
+ * Handles different output formats and presentation styles.
+ * Follows the Single Responsibility Principle (SRP) by only
+ * handling output formatting, not search logic.
+ *
+ * Follows the Strategy Pattern for format selection:
+ * - Default: Compact list with basic info
+ * - Detailed: Full metadata per file
+ * - JSON: Machine-readable structured output
+ *
+ * Features:
+ * - Multiple output formats
+ * - ANSI color support for terminals
+ * - Human-readable size formatting
+ * - ISO 8601 timestamp formatting
+ *
+ * Example usage:
+ * @code
+ *   SearchResult results = scanner.search(...);
+ *   OutputFormatter formatter(OutputFormat::Detailed, true);
+ *   formatter.print(results);  // Prints to stdout with colors
+ *
+ *   // Or to a file
+ *   std::ofstream file("output.json");
+ *   OutputFormatter jsonFormatter(OutputFormat::JSON, false);
+ *   jsonFormatter.print(results, file);
+ * @endcode
+ *
+ * @note Thread-safe for concurrent formatting of different results
+ * @note Color codes automatically reset after each colored section
  */
 class OutputFormatter
 {

@@ -7,11 +7,19 @@
 namespace fmf
 {
 
+/**
+ * @brief Construct formatter with specified format and color settings
+ */
 OutputFormatter::OutputFormatter(OutputFormat format, bool useColor)
     : format_(format), useColor_(useColor)
 {
 }
 
+/**
+ * @brief Print search results in the configured format
+ * @param results Search results to format
+ * @param out Output stream (defaults to std::cout)
+ */
 void OutputFormatter::print(const SearchResult& results,
                             std::ostream& out) const
 {

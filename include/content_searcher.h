@@ -9,6 +9,33 @@ namespace fmf
 
 /**
  * @brief Utility class for searching within file contents
+ *
+ * Provides static methods for content-based file searching.
+ * Implements safety checks to avoid searching binary files and
+ * limits search to reasonable file sizes.
+ *
+ * Features:
+ * - Text file detection (heuristic-based)
+ * - Size limit protection (MAX_SEARCH_SIZE = 10MB)
+ * - Binary file skipping
+ * - Case-sensitive/insensitive search
+ * - Regular expression support
+ *
+ * Example usage:
+ * @code
+ *   bool found = ContentSearcher::searchInFile(
+ *       "/path/file.cpp",
+ *       "TODO",
+ *       false,  // not regex
+ *       false   // case-insensitive
+ *   );
+ * @endcode
+ *
+ * @note All methods are static and thread-safe
+ * @note Automatically skips binary files
+ * @note Returns false for files exceeding size limit
+ *
+ * @warning Large files are skipped to prevent memory issues
  */
 class ContentSearcher
 {
