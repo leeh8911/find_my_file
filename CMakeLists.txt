@@ -24,6 +24,7 @@ set(SOURCES
     src/content_searcher.cpp
     src/ignore_patterns.cpp
     src/thread_pool.cpp
+    src/output_formatter.cpp
 )
 
 # Header files
@@ -36,6 +37,7 @@ set(HEADERS
     include/content_searcher.h
     include/ignore_patterns.h
     include/thread_pool.h
+    include/output_formatter.h
 )
 
 # Main executable
@@ -67,6 +69,7 @@ add_executable(tests
     tests/test_content_searcher.cpp
     tests/test_ignore_patterns.cpp
     tests/test_thread_pool.cpp
+    tests/test_output_formatter.cpp
     ${SOURCES}
 )
 

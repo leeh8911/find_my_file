@@ -57,20 +57,23 @@
   - [ ] 최대 결과 수 제한
   - [ ] 타임아웃 설정
 
-## Phase 5: CLI 인터페이스
-- [ ] 명령줄 인자 파싱
-  - [ ] 옵션 파서 구현 또는 라이브러리 통합 (예: CLI11, cxxopts)
-  - [ ] 도움말 메시지
-  - [ ] 옵션 검증
-- [ ] 출력 포맷팅
-  - [ ] 기본 리스트 출력
-  - [ ] 상세 정보 출력 (-l 옵션)
-  - [ ] JSON 출력 옵션
-  - [ ] 색상 지원 (터미널)
-- [ ] 진행 상황 표시
+## Phase 5: CLI 인터페이스 ✅
+- [x] 명령줄 인자 파싱
+  - [x] 옵션 파서 구현 (수동 구현 완료)
+  - [x] 도움말 메시지
+  - [x] 옵션 검증
+- [x] 출력 포맷팅
+  - [x] 기본 리스트 출력 (Default format)
+  - [x] 상세 정보 출력 (Detailed format)
+  - [x] JSON 출력 옵션
+  - [x] 색상 지원 (ANSI codes)
+- [x] OutputFormatter 클래스 (12 unit tests)
+- [x] CLI 옵션 (--format, --color, --no-color)
+- [x] 통합 테스트 (uc_output_formats.sh with 7 tests)
+- [ ] 진행 상황 표시 (optional - future enhancement)
   - [ ] 프로그레스 바
   - [ ] 통계 정보 (파일 수, 처리 속도)
-- [ ] 대화형 모드
+- [ ] 대화형 모드 (optional - future enhancement)
   - [ ] 결과 페이징
   - [ ] 필터 실시간 조정
 
