@@ -34,6 +34,8 @@ void printUsage(const char* programName)
         << "  -l, --follow-links   Follow symbolic links\n"
         << "  --ignore FILE        Use ignore patterns from file (.gitignore "
            "style)\n"
+        << "  -j, --threads N      Number of threads for parallel scanning "
+           "(0=sequential)\n"
         << "\nOther Options:\n"
         << "  -h, --help           Display this help message\n"
         << "\nExamples:\n"
@@ -78,6 +80,7 @@ int main(int argc, char* argv[])
     bool recursive = false;
     bool followLinks = false;
     int maxDepth = -1;
+    size_t threadCount = 0;  // 0 = sequential
     std::string targetPath;
     std::string ignoreFile;
 
@@ -237,6 +240,33 @@ int main(int argc, char* argv[])
                 return 1;
             }
         }
+        else if (arg == "-j" || arg == "--threads")
+        {
+            if (i + 1 < argc)
+            {
+                try
+                {
+                    int threads = std::stoi(argv[++i]);
+                    if (threads < 0)
+                    {
+                        std::cerr
+                            << "Error: Thread count must be non-negative\n";
+                        return 1;
+                    }
+                    threadCount = static_cast<size_t>(threads);
+                }
+                catch (...)
+                {
+                    std::cerr << "Error: Invalid thread count value\n";
+                    return 1;
+                }
+            }
+            else
+            {
+                std::cerr << "Error: --threads requires a numeric argument\n";
+                return 1;
+            }
+        }
         else if (arg[0] != '-')
         {
             targetPath = arg;
@@ -290,12 +320,17 @@ int main(int argc, char* argv[])
                 std::cout << " (max depth: " << maxDepth << ")";
             }
         }
+        if (threadCount > 0 && recursive)
+        {
+            std::cout << " using " << threadCount << " threads";
+        }
         std::cout << "...\n";
 
         // Use search if criteria is set, otherwise just scan
         if (!criteria.isEmpty())
         {
-            results = scanner.search(targetPath, recursive, criteria, maxDepth);
+            results = scanner.search(targetPath, recursive, criteria, maxDepth,
+                                     threadCount);
         }
         else
         {

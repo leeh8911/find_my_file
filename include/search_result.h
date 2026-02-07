@@ -2,6 +2,7 @@
 #define SEARCH_RESULT_H
 
 #include <memory>
+#include <mutex>
 #include <vector>
 
 #include "file_info.h"
@@ -19,6 +20,31 @@ class SearchResult
      * @brief Default constructor
      */
     SearchResult() = default;
+
+    /**
+     * @brief Move constructor
+     */
+    SearchResult(SearchResult&& other) noexcept
+        : files_(std::move(other.files_))
+    {
+    }
+
+    /**
+     * @brief Move assignment operator
+     */
+    SearchResult& operator=(SearchResult&& other) noexcept
+    {
+        if (this != &other)
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            files_ = std::move(other.files_);
+        }
+        return *this;
+    }
+
+    // Delete copy constructor and assignment
+    SearchResult(const SearchResult&) = delete;
+    SearchResult& operator=(const SearchResult&) = delete;
 
     /**
      * @brief Add a file to the results
@@ -84,6 +110,7 @@ class SearchResult
 
  private:
     std::vector<FileInfo> files_;
+    mutable std::mutex mutex_;  // For thread-safe operations
 };
 
 }  // namespace fmf
