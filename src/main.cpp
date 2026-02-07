@@ -16,12 +16,12 @@
 
 #include <iostream>
 
-#include "command_line_parser.h"
-#include "config_file.h"
-#include "file_scanner.h"
-#include "ignore_patterns.h"
-#include "logger.h"
-#include "output_formatter.h"
+#include "adapters/cli/command_line_parser.h"
+#include "adapters/presenters/output_formatter.h"
+#include "application/services/ignore_patterns.h"
+#include "application/use_cases/file_scanner.h"
+#include "infrastructure/config/config_file.h"
+#include "infrastructure/logging/logger.h"
 
 using namespace fmf;
 

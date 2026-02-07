@@ -16,35 +16,53 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 
 # Source files
 set(SOURCES
-    src/file_info.cpp
-    src/search_result.cpp
-    src/file_scanner.cpp
-    src/search_criteria.cpp
-    src/pattern_matcher.cpp
-    src/content_searcher.cpp
-    src/ignore_patterns.cpp
-    src/thread_pool.cpp
-    src/output_formatter.cpp
-    src/command_line_parser.cpp
-    src/logger.cpp
-    src/config_file.cpp
-    src/semantic_searcher.cpp
+    # Domain Layer
+    src/domain/entities/file_info.cpp
+    src/domain/entities/search_result.cpp
+    src/domain/value_objects/search_criteria.cpp
+    
+    # Application Layer
+    src/application/services/pattern_matcher.cpp
+    src/application/services/content_searcher.cpp
+    src/application/services/ignore_patterns.cpp
+    src/application/use_cases/file_scanner.cpp
+    src/application/use_cases/semantic_searcher.cpp
+    
+    # Adapters Layer
+    src/adapters/cli/command_line_parser.cpp
+    src/adapters/presenters/output_formatter.cpp
+    
+    # Infrastructure Layer
+    src/infrastructure/logging/logger.cpp
+    src/infrastructure/config/config_file.cpp
+    src/infrastructure/threading/thread_pool.cpp
 )
 
 # Header files
 set(HEADERS
-    include/file_info.h
-    include/search_result.h
-    include/file_scanner.h
-    include/search_criteria.h
-    include/pattern_matcher.h
-    include/content_searcher.h
-    include/ignore_patterns.h
-    include/thread_pool.h
-    include/output_formatter.h
-    include/command_line_parser.h
-    include/logger.h
-    include/config_file.h
+    # Domain Layer
+    include/domain/entities/file_info.h
+    include/domain/entities/search_result.h
+    include/domain/entities/semantic_result.h
+    include/domain/value_objects/search_criteria.h
+    
+    # Application Layer
+    include/application/ports/i_embedding_provider.h
+    include/application/ports/i_vector_store.h
+    include/application/services/pattern_matcher.h
+    include/application/services/content_searcher.h
+    include/application/services/ignore_patterns.h
+    include/application/use_cases/file_scanner.h
+    include/application/use_cases/semantic_searcher.h
+    
+    # Adapters Layer
+    include/adapters/cli/command_line_parser.h
+    include/adapters/presenters/output_formatter.h
+    
+    # Infrastructure Layer
+    include/infrastructure/logging/logger.h
+    include/infrastructure/config/config_file.h
+    include/infrastructure/threading/thread_pool.h
 )
 
 # Main executable
@@ -69,18 +87,26 @@ enable_testing()
 
 # Test executable
 add_executable(tests
-    tests/test_file_info.cpp
-    tests/test_file_scanner.cpp
-    tests/test_pattern_matcher.cpp
-    tests/test_search_criteria.cpp
-    tests/test_content_searcher.cpp
-    tests/test_ignore_patterns.cpp
-    tests/test_thread_pool.cpp
-    tests/test_output_formatter.cpp
-    tests/test_logger.cpp
-    tests/test_config_file.cpp
-    tests/test_semantic_interfaces.cpp
-    tests/test_semantic_searcher.cpp
+    # Domain Layer Tests
+    tests/domain/entities/test_file_info.cpp
+    tests/domain/value_objects/test_search_criteria.cpp
+    
+    # Application Layer Tests
+    tests/application/services/test_pattern_matcher.cpp
+    tests/application/services/test_content_searcher.cpp
+    tests/application/services/test_ignore_patterns.cpp
+    tests/application/use_cases/test_file_scanner.cpp
+    tests/application/use_cases/test_semantic_interfaces.cpp
+    tests/application/use_cases/test_semantic_searcher.cpp
+    
+    # Adapters Layer Tests
+    tests/adapters/test_output_formatter.cpp
+    
+    # Infrastructure Layer Tests
+    tests/infrastructure/test_logger.cpp
+    tests/infrastructure/test_config_file.cpp
+    tests/infrastructure/test_thread_pool.cpp
+    
     ${SOURCES}
 )
 

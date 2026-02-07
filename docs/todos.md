@@ -136,8 +136,9 @@
 - [ ] 플러그인 시스템 (보류)
   - [ ] 커스텀 필터 추가
   - [ ] 커스텀 출력 포맷
-- [ ] GUI 버전 (장기 목표, 보류)
-  - [ ] Qt 또는 다른 GUI 프레임워크
+- [ ] GUI 버전 → **Phase 12로 이동** (아키텍처 설계 완료)
+  - [x] Architecture.md에 GUI 설계 문서화 (Everything 스타일)
+  - [ ] 구현은 Phase 12 참조
 - [ ] 네트워크 드라이브 지원 (보류)
   - [ ] SMB/NFS 마운트 처리
 
@@ -161,24 +162,24 @@
 4. #include 경로 수정
 5. 빌드 및 테스트 검증
 
-### Phase 11.1: Domain Layer 이동 ✅ **우선 완료 필요**
-- [ ] 디렉토리 생성
-  - [ ] include/domain/entities/, include/domain/value_objects/
-  - [ ] src/domain/entities/, src/domain/value_objects/
-  - [ ] tests/domain/entities/, tests/domain/value_objects/
-- [ ] Entities 이동
-  - [ ] file_info.h/.cpp → domain/entities/
-  - [ ] search_result.h/.cpp → domain/entities/
-  - [ ] semantic_result.h → domain/entities/
-- [ ] Value Objects 이동
-  - [ ] search_criteria.h/.cpp → domain/value_objects/
-- [ ] 테스트 이동
-  - [ ] test_file_info.cpp → tests/domain/entities/
-  - [ ] test_search_result.cpp → tests/domain/entities/
-  - [ ] test_search_criteria.cpp → tests/domain/value_objects/
-- [ ] #include 경로 수정 (domain/entities/file_info.h)
-- [ ] CMakeLists.txt 소스 경로 업데이트
-- [ ] 빌드 및 테스트 검증 (114 tests 통과 확인)
+### Phase 11.1: Domain Layer 이동 ✅ **완료**
+- [x] 디렉토리 생성
+  - [x] include/domain/entities/, include/domain/value_objects/
+  - [x] src/domain/entities/, src/domain/value_objects/
+  - [x] tests/domain/entities/, tests/domain/value_objects/
+- [x] Entities 이동
+  - [x] file_info.h/.cpp → domain/entities/
+  - [x] search_result.h/.cpp → domain/entities/
+  - [x] semantic_result.h → domain/entities/
+- [x] Value Objects 이동
+  - [x] search_criteria.h/.cpp → domain/value_objects/
+- [x] 테스트 이동
+  - [x] test_file_info.cpp → tests/domain/entities/
+  - [x] test_search_criteria.cpp → tests/domain/value_objects/
+- [x] #include 경로 수정 (domain/entities/file_info.h)
+- [x] CMakeLists.txt 소스 경로 업데이트
+- [x] 빌드 및 테스트 검증 (114 tests 통과 확인)
+- 커밋: aee93bf "refactor: restructure Domain Layer to Clean Architecture"
 
 ### Phase 11.2: Application Layer 이동
 - [ ] 디렉토리 생성
@@ -406,19 +407,321 @@
 - [ ] README.md 업데이트 완료
 - [ ] 성능 벤치마크 결과 문서화
 
+---
+
+## Phase 12: GUI Implementation (Everything UI Style)
+### 목표
+Everything 스타일의 빠르고 직관적인 데스크톱 GUI 제공. CLI와 Domain/Application 레이어를 공유하여 코드 재사용 극대화.
+
+### Why: GUI의 필요성
+- **사용성**: 일반 사용자를 위한 직관적 인터페이스
+- **생산성**: 실시간 검색, 빠른 필터링, 마우스 조작
+- **시각화**: 파일 아이콘, 색상 코딩, 프리뷰
+- **통합**: 파일 관리자, 외부 앱과 연동 (드래그앤드롭, 컨텍스트 메뉴)
+
+### Architecture Principles
+- **Clean Architecture**: CLI와 동일한 Domain/Application 레이어 공유
+- **MVP Pattern**: MainWindow (View), SearchPresenter (Presenter), FileListViewModel (ViewModel)
+- **Async UI**: UI 스레드 블로킹 방지 (QtConcurrent, std::async)
+- **Cross-platform**: Linux, macOS, Windows 지원 (Qt 6)
+
+### Phase 12.1: Qt 프로젝트 설정 및 기본 구조
+- [ ] CMake 설정
+  - [ ] BUILD_GUI 옵션 추가
+  - [ ] Qt6 의존성 (Core, Widgets, Concurrent)
+  - [ ] find_my_files_core 라이브러리 생성 (공유 코드)
+  - [ ] find_my_files_gui 실행 파일
+- [ ] 디렉토리 생성
+  - [ ] include/adapters/gui/
+  - [ ] include/infrastructure/gui/
+  - [ ] src/adapters/gui/
+  - [ ] src/infrastructure/gui/
+  - [ ] tests/gui/
+- [ ] 기본 파일
+  - [ ] src/gui_main.cpp (Qt entry point)
+  - [ ] QtApplication 클래스 (QApplication 래퍼)
+  - [ ] 빌드 및 실행 검증 (빈 창)
+- [ ] 문서화
+  - [ ] README.md에 GUI 빌드 방법 추가
+  - [ ] Qt 설치 가이드
+
+### Phase 12.2: MainWindow UI 레이아웃 (Everything 스타일)
+- [ ] MainWindow 클래스 (QMainWindow)
+  - [ ] 메뉴 바 (File, Edit, View, Tools, Help)
+  - [ ] 검색 바 (QLineEdit, 포커스 우선)
+  - [ ] 인덱스 버튼 (툴바 우측, 수동 인덱싱 트리거)
+  - [ ] 경로 선택 (QComboBox + Browse 버튼)
+  - [ ] 빠른 필터 (QCheckBox: Match Case, Regex, Content, Semantic)
+  - [ ] 결과 테이블 (QTableView: Name, Path, Size, Modified, Relevance)
+  - [ ] 상태 바 (QStatusBar: 2개 섹션)
+    * 왼쪽: 검색 통계 (N files found, search time, total size)
+    * 오른쪽: IndexingStatusWidget (인덱싱 진행률, 남은 파일)
+- [ ] IndexingStatusWidget 클래스
+  - [ ] QProgressBar: 인덱싱 진행률 (0-100%)
+  - [ ] QLabel: 상태 텍스트 ("Indexing: 1,234 / 5,678 (22%)")
+  - [ ] QPushButton: 취소 버튼 (인덱싱 중단)
+  - [ ] 상태 아이콘: 대기/진행/완료/에러/취소
+  - [ ] 진행률 바 색상 (0-30% 노란, 31-70% 파란, 71-100% 초록)
+- [ ] 스타일시트
+  - [ ] Everything 스타일 CSS (미니멀, 깔끔)
+  - [ ] 다크/라이트 테마 지원
+- [ ] 아이콘
+  - [ ] 파일 타입 아이콘 (QFileIconProvider)
+  - [ ] 툴바 아이콘 (Material Icons or Feather Icons)
+- [ ] 레이아웃 테스트
+  - [ ] 다양한 해상도 (1920x1080, 1366x768)
+  - [ ] 윈도우 리사이즈 동작
+
+### Phase 12.3: SearchPresenter 및 ViewModel
+- [ ] SearchPresenter 클래스
+  - [ ] onSearchTextChanged(QString) - 디바운스 200ms
+  - [ ] onPathChanged(QString)
+  - [ ] onFilterChanged(FilterOptions)
+  - [ ] performSearch() - 비동기 검색 (std::async)
+  - [ ] onSearchComplete(SearchResult)
+  - [ ] cancelSearch() - 검색 취소
+  - [ ] onStartIndexing() - 인덱싱 시작
+  - [ ] onIndexingProgress(int current, int total) - 진행 상황 업데이트
+  - [ ] onIndexingComplete() - 인뎁싱 완료
+  - [ ] cancelIndexing() - 인뎁싱 취소
+- [ ] FileListViewModel 클래스 (QAbstractTableModel)
+  - [ ] rowCount(), columnCount()
+  - [ ] data(index, role) - DisplayRole, UserRole, DecorationRole
+  - [ ] headerData() - 컬럼 헤더
+  - [ ] setSearchResult(SearchResult)
+  - [ ] sort(column, order)
+- [ ] 의존성 주입
+  - [ ] SearchPresenter → FileScanner (Application Layer)
+  - [ ] MainWindow → SearchPresenter
+- [ ] 단위 테스트
+  - [ ] SearchPresenter 로직 (Mock View)
+  - [ ] FileListViewModel 변환
+
+### Phase 12.4: 기본 검색 기능 통합 (CLI 재사용)
+- [ ] 파일 이름 검색
+  - [ ] 검색어 입력 → SearchCriteria 생성
+  - [ ] FileScanner 호출
+  - [ ] 결과 테이블 업데이트
+- [ ] 와일드카드 패턴
+  - [ ] "*.cpp", "test_*.h"
+- [ ] 대소문자 구분 옵션
+- [ ] 정규식 옵션
+- [ ] 통합 테스트
+  - [ ] QTest::keyClick() 시뮬레이션
+  - [ ] 검색 결과 검증
+
+### Phase 12.5: 고급 필터 패널 (QDockWidget)
+- [ ] FilterPanelController 클래스
+  - [ ] 파일 타입 (File, Folder, Symlink)
+  - [ ] 크기 범위 (QSlider: 0B ~ 100GB)
+  - [ ] 날짜 범위 (QDateEdit: Modified Time)
+  - [ ] 확장자 다중 선택 (QListWidget)
+  - [ ] reset() - 필터 초기화
+- [ ] 도킹 가능한 패널
+  - [ ] 기본 위치: 오른쪽
+  - [ ] 숨기기/보이기 토글 (View 메뉴)
+- [ ] SearchCriteria 통합
+  - [ ] FilterPanel → SearchCriteria 변환
+  - [ ] Presenter에 전달
+
+### Phase 12.6: 실시간 검색 및 성능 최적화
+- [ ] Debounced Search
+  - [ ] QTimer::singleShot(200ms)
+  - [ ] 타이핑 중 검색 방지
+- [ ] 비동기 검색
+  - [ ] QtConcurrent::run() 또는 std::async
+  - [ ] UI 스레드 블로킹 방지
+  - [ ] QMetaObject::invokeMethod() for UI update
+- [ ] 취소 가능한 검색
+  - [ ] Cancel 버튼
+  - [ ] std::atomic<bool> m_searchCancelled
+- [ ] Virtual Scrolling
+  - [ ] QTableView 기본 가상화 활용
+  - [ ] 대량 결과 (10만+ 파일) 테스트
+- [ ] Incremental Updates
+  - [ ] 1000개 단위 중간 결과 표시
+  - [ ] QProgressBar (상태 바)
+
+### Phase 12.7: 컨텍스트 메뉴 및 파일 작업
+- [ ] 파일 우클릭 메뉴
+  - [ ] Open (기본 앱)
+  - [ ] Open With > (앱 선택)
+  - [ ] Copy Path / Copy Name
+  - [ ] Show in File Manager (Nautilus/Finder/Explorer)
+  - [ ] Open Terminal Here
+  - [ ] Properties (상세 정보 다이얼로그)
+  - [ ] Delete (확인 후 삭제)
+- [ ] 파일 열기 로직
+  - [ ] QDesktopServices::openUrl()
+  - [ ] 플랫폼별 처리 (Linux: xdg-open, macOS: open, Windows: start)
+- [ ] 드래그앤드롭
+  - [ ] 파일 테이블 → 외부 앱 (파일 경로 전달)
+
+### Phase 12.8: 키보드 단축키
+- [ ] 검색 단축키
+  - [ ] Ctrl+F: 검색 바 포커스
+  - [ ] F3 / Enter: 다음 결과
+  - [ ] Shift+F3: 이전 결과
+  - [ ] Escape: 검색 취소
+- [ ] 네비게이션
+  - [ ] ↑/↓: 결과 이동
+  - [ ] Page Up/Down: 페이지 이동
+  - [ ] Home/End: 처음/마지막
+  - [ ] Enter: 파일 열기
+- [ ] 필터 토글
+  - [ ] Ctrl+M: Match Case
+  - [ ] Ctrl+R: Regex
+  - [ ] Ctrl+Shift+F: Content Search
+- [ ] 앱 제어
+  - [ ] Ctrl+Q: 종료
+  - [ ] Ctrl+,: 설정
+  - [ ] F1: 도움말
+
+### Phase 12.9: 설정 및 프리셋
+- [ ] QtSettingsManager 클래스 (QSettings 래퍼)
+  - [ ] 윈도우 크기/위치 저장/복원
+  - [ ] 최근 검색어 저장 (max 20개)
+  - [ ] 최근 경로 저장 (max 10개)
+  - [ ] 필터 프리셋 (저장된 검색)
+- [ ] 설정 다이얼로그 (Ctrl+,)
+  - [ ] 테마 선택 (다크/라이트/시스템)
+  - [ ] 기본 검색 경로
+  - [ ] 스레드 수
+  - [ ] 로그 레벨
+- [ ] ConfigFile 통합
+  - [ ] .findmyfilesrc → 기본 설정 로드
+  - [ ] GUI 설정 → .findmyfilesrc 저장
+
+### Phase 12.10: 테마 및 UI 폴리시
+- [ ] 다크 모드
+  - [ ] Qt 스타일시트 (Fusion 스타일)
+  - [ ] 색상 팔레트 (배경, 텍스트, 강조)
+- [ ] 라이트 모드
+  - [ ] 기본 Qt 테마
+- [ ] 시스템 테마 감지
+  - [ ] QGuiApplication::styleHints()
+- [ ] 아이콘 통일
+  - [ ] Material Icons or Feather Icons
+  - [ ] SVG 형식 (스케일링)
+- [ ] 애니메이션
+  - [ ] 검색 중 로딩 스피너
+  - [ ] 결과 테이블 페이드인
+- [ ] 폰트 설정
+  - [ ] 고정폭 폰트 (경로 컬럼)
+  - [ ] 가독성 최적화
+
+### Phase 12.11: 컨텐츠 및 Semantic 검색 통합
+- [ ] Content Search 모드
+  - [ ] ContentSearcher 통합
+  - [ ] 검색 진행 표시 (파일 수 카운터)
+- [ ] Semantic Search 모드 (Phase 10 선행)
+  - [ ] SemanticSearcher 통합
+  - [ ] 인뎁싱 진행 상태 표시
+    * IndexingStatusWidget에 실시간 업데이트 (100ms 간격)
+    * 진행률 바 (0-100%)
+    * 현재/전체 파일 수 ("3,421 / 5,678 files")
+    * 남은 퍼센트 ("%")
+    * 예상 남은 시간 (선택적, ETA 계산)
+  - [ ] 인뎁싱 세부 정보 다이얼로그
+    * 인뎁싱된 파일 목록 (QListWidget)
+    * 건너뚴 파일 (바이너리, 너무 큼, 권한 없음)
+    * 에러 파일 목록 (빨간색 표시)
+    * 인뎁스 크기 (MB/GB)
+    * 소요 시간 (12.4s)
+  - [ ] 인뎁싱 상태 지속성
+    * 마지막 인뎁싱 시간 표시
+    * 인뎁스 유효성 표시 (최신/오래됨)
+    * 자동 증분 업데이트 (변경된 파일만 재인뎁싱)
+  - [ ] "Similar files" 버튼 (선택한 파일의 유사 파일 찾기)
+- [ ] Hybrid Search
+  - [ ] Keyword + Semantic 병합
+  - [ ] Relevance Score 표시 (결과 테이블 컬럼)
+
+### Phase 12.12: 프리뷰 패널 (선택적)
+- [ ] 파일 미리보기 (QSplitter)
+  - [ ] 텍스트 파일: QTextEdit (읽기 전용)
+  - [ ] 이미지: QLabel (QPixmap)
+  - [ ] PDF: 외부 라이브러리 (QPdfView) 또는 "Open"으로 대체
+- [ ] Syntax Highlighting
+  - [ ] QSyntaxHighlighter (간단한 C++ 하이라이팅)
+- [ ] 토글 가능 (View 메뉴)
+
+### Phase 12.13: 테스트 및 검증
+- [ ] 단위 테스트
+  - [ ] SearchPresenter 로직 (Google Test)
+  - [ ] FileListViewModel 변환
+  - [ ] FilterPanelController 상태 관리
+  - [ ] QtSettingsManager 저장/복원
+- [ ] Integration Tests (QTest)
+  - [ ] MainWindow + SearchPresenter
+  - [ ] 키보드/마우스 시뮬레이션 (QTest::keyClick)
+  - [ ] 검색 결과 검증 (QSignalSpy)
+- [ ] Manual Testing
+  - [ ] 다양한 해상도 (4K, FHD, HD)
+  - [ ] 다양한 OS (Ubuntu 22.04, macOS 13+, Windows 10+)
+  - [ ] 대량 파일 테스트 (10만+ 파일)
+  - [ ] 메모리 누수 (Qt Creator Profiler, Valgrind)
+  - [ ] CPU 사용률 (검색 중 모니터링)
+
+### Phase 12.14: 문서화 및 배포
+- [ ] README.md 업데이트
+  - [ ] GUI 스크린샷 추가
+  - [ ] GUI 빌드 방법
+  - [ ] Qt 6 설치 가이드 (Linux, macOS, Windows)
+- [ ] 사용자 가이드
+  - [ ] GUI 기능 설명
+  - [ ] 키보드 단축키 표
+  - [ ] 필터 사용 예제
+- [ ] 배포 패키지
+  - [ ] AppImage (Linux)
+  - [ ] DMG (macOS)
+  - [ ] MSI/EXE (Windows)
+- [ ] GitHub Release
+  - [ ] GUI 바이너리 업로드
+  - [ ] Release Notes
+
+### Phase 12 Definition of Done
+- [ ] Qt 6 기반 GUI 앱 빌드 성공
+- [ ] 모든 기본 검색 기능 동작 (파일 이름, 와일드카드, 정규식, 필터)
+- [ ] 실시간 검색 (디바운스, 비동기)
+- [ ] 컨텍스트 메뉴 및 파일 열기
+- [ ] 키보드 단축키 전체 구현
+- [ ] 다크/라이트 테마 지원
+- [ ] 윈도우 크기/위치 저장/복원
+- [ ] 모든 단위 테스트 통과
+- [ ] QTest 통합 테스트 통과
+- [ ] 3개 플랫폼 빌드 검증 (Linux, macOS, Windows)
+- [ ] 메모리 누수 없음
+- [ ] Architecture.md 검토 완료
+- [ ] README.md 업데이트 및 스크린샷
+
+### Phase 12 예상 추가
+- 예상 코드: +3,500 라인 (GUI 컴포넌트, Qt 통합)
+- 예상 테스트: +25 단위 테스트, +15 QTest 통합 테스트
+- 예상 외부 의존성: Qt 6 (Core, Widgets, Concurrent)
+- 예상 완료율: 98% (Phase 12 완료 시, 전체 프로젝트 거의 완성)
+
 ## 현재 진행 상황
 - **Phase: 11 진행 중 (Clean Architecture Refactoring) 🔴 최우선**
 - Phase 9 완료 ✅, Phase 10 부분 완료 (인터페이스 설계, Mock 구현, 코어 로직)
+- **Phase 12 아키텍처 설계 완료** ✅ (architecture.md에 GUI 섹션 추가)
 - 완료율: 88% (전통적 검색 완성, Semantic Search 기반 구조 완료)
 - 총 코드: ~4,300 라인 (헤더 + 구현)
 - 총 테스트: 114 단위 테스트 + 40 통합 테스트 = 154 테스트
 - **다음 작업: Phase 11 Architecture Refactoring (폴더 구조 재편성)**
 
-### Phase 10 예상 추가
+### 향후 예상 추가
+#### Phase 10 (Semantic Search)
 - 예상 코드: +2,000 라인 (SemanticSearcher, Providers, VectorStore)
 - 예상 테스트: +30 단위 테스트, +10 통합 테스트
 - 예상 외부 의존성: FAISS, libcurl, JSON library
 - 예상 완료율: 95% (Phase 10 완료 시)
+
+#### Phase 12 (GUI Implementation)
+- 예상 코드: +3,500 라인 (Everything UI 스타일 GUI)
+- 예상 테스트: +25 단위 테스트, +15 QTest 통합 테스트
+- 예상 외부 의존성: Qt 6 (Core, Widgets, Concurrent)
+- 예상 완료율: 98% (Phase 12 완료 시, 거의 완전한 제품)
 
 ### 완료된 Phase
 
@@ -513,7 +816,7 @@
   * 옵션: --system, --no-tests, --clean
 - ✅ 아키텍처 문서화 (architecture.md)
 
-### Phase 9 진행 내역 (85% 완료) 🔄
+### Phase 9 진행 내역 (90% 완료) 🔄
 - ✅ ConfigFile 클래스 구현
   * INI 스타일 파서
   * [default] 및 [search.*] 섹션
@@ -529,8 +832,9 @@
 - ✅ 98 단위 테스트, 40 통합 테스트
 - ✅ 예제 설정 파일 (examples/.findmyfilesrc)
 - ✅ README 및 architecture.md 업데이트
+- ✅ GUI 아키텍처 설계 완료 (architecture.md에 문서화)
 - ⏳ 플러그인 시스템 (선택적, 향후)
-- ⏳ GUI 버전 (장기 목표)
+- ⏳ GUI 구현 → Phase 12로 이동 (아키텍처 완료)
 - ⏳ 데이터베이스 인덱싱 (장기 목표)
 
 ## 우선순위 표시
