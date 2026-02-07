@@ -141,6 +141,131 @@
 - [ ] 네트워크 드라이브 지원 (보류)
   - [ ] SMB/NFS 마운트 처리
 
+## 🔴 Phase 11: Clean Architecture Refactoring (최우선 - NEXT)
+### 목표
+현재 flat한 폴더 구조를 Clean Architecture 기반 계층 구조로 리팩터링하여 의존성 방향을 명확히 하고 유지보수성을 향상
+
+### Why: 리팩터링의 필요성
+- 현재: include/, src/ 폴더에 모든 파일이 flat하게 위치
+- 문제점: 레이어 간 의존성 방향이 명확하지 않음, 컴포넌트 역할 구분 모호
+- 목표: Clean Architecture 4계층 구조로 명확한 책임 분리
+  * Domain Layer: 비즈니스 로직 (의존성 없음)
+  * Application Layer: Use Cases, Services (Domain에만 의존)
+  * Adapters Layer: CLI, Presenters (Application에 의존)
+  * Infrastructure Layer: 외부 도구 (모든 레이어에 접근 가능)
+
+### 작업 범위
+1. 폴더 구조 재편성 (Domain → Application → Adapters → Infrastructure)
+2. 파일 이동 (헤더, 구현, 테스트)
+3. CMakeLists.txt 업데이트
+4. #include 경로 수정
+5. 빌드 및 테스트 검증
+
+### Phase 11.1: Domain Layer 이동 ✅ **우선 완료 필요**
+- [ ] 디렉토리 생성
+  - [ ] include/domain/entities/, include/domain/value_objects/
+  - [ ] src/domain/entities/, src/domain/value_objects/
+  - [ ] tests/domain/entities/, tests/domain/value_objects/
+- [ ] Entities 이동
+  - [ ] file_info.h/.cpp → domain/entities/
+  - [ ] search_result.h/.cpp → domain/entities/
+  - [ ] semantic_result.h → domain/entities/
+- [ ] Value Objects 이동
+  - [ ] search_criteria.h/.cpp → domain/value_objects/
+- [ ] 테스트 이동
+  - [ ] test_file_info.cpp → tests/domain/entities/
+  - [ ] test_search_result.cpp → tests/domain/entities/
+  - [ ] test_search_criteria.cpp → tests/domain/value_objects/
+- [ ] #include 경로 수정 (domain/entities/file_info.h)
+- [ ] CMakeLists.txt 소스 경로 업데이트
+- [ ] 빌드 및 테스트 검증 (114 tests 통과 확인)
+
+### Phase 11.2: Application Layer 이동
+- [ ] 디렉토리 생성
+  - [ ] include/application/ports/, services/, use_cases/
+  - [ ] src/application/services/, use_cases/
+  - [ ] tests/application/services/, use_cases/
+- [ ] Ports 이동
+  - [ ] i_embedding_provider.h → application/ports/
+  - [ ] i_vector_store.h → application/ports/
+- [ ] Services 이동
+  - [ ] pattern_matcher.h/.cpp → application/services/
+  - [ ] content_searcher.h/.cpp → application/services/
+  - [ ] ignore_patterns.h/.cpp → application/services/
+- [ ] Use Cases 이동
+  - [ ] file_scanner.h/.cpp → application/use_cases/
+  - [ ] semantic_searcher.h/.cpp → application/use_cases/
+- [ ] 테스트 이동
+  - [ ] test_pattern_matcher.cpp → tests/application/services/
+  - [ ] test_content_searcher.cpp → tests/application/services/
+  - [ ] test_ignore_patterns.cpp → tests/application/services/
+  - [ ] test_file_scanner.cpp → tests/application/use_cases/
+  - [ ] test_semantic_interfaces.cpp → tests/application/use_cases/
+  - [ ] test_semantic_searcher.cpp → tests/application/use_cases/
+- [ ] #include 경로 수정
+- [ ] CMakeLists.txt 업데이트
+- [ ] 빌드 및 테스트 검증
+
+### Phase 11.3: Adapters Layer 이동
+- [ ] 디렉토리 생성
+  - [ ] include/adapters/cli/, presenters/
+  - [ ] src/adapters/cli/, presenters/
+  - [ ] tests/adapters/
+- [ ] CLI 이동
+  - [ ] command_line_parser.h/.cpp → adapters/cli/
+- [ ] Presenters 이동
+  - [ ] output_formatter.h/.cpp → adapters/presenters/
+- [ ] 테스트 이동
+  - [ ] test_command_line_parser.cpp → tests/adapters/
+  - [ ] test_output_formatter.cpp → tests/adapters/
+- [ ] #include 경로 수정
+- [ ] CMakeLists.txt 업데이트
+- [ ] 빌드 및 테스트 검증
+
+### Phase 11.4: Infrastructure Layer 이동
+- [ ] 디렉토리 생성
+  - [ ] include/infrastructure/logging/, config/, threading/, providers/
+  - [ ] src/infrastructure/logging/, config/, threading/
+  - [ ] tests/infrastructure/
+- [ ] Logging 이동
+  - [ ] logger.h/.cpp → infrastructure/logging/
+- [ ] Config 이동
+  - [ ] config_file.h/.cpp → infrastructure/config/
+- [ ] Threading 이동
+  - [ ] thread_pool.h/.cpp → infrastructure/threading/
+- [ ] Providers 이동
+  - [ ] mock_embedding_provider.h → infrastructure/providers/
+  - [ ] mock_vector_store.h → infrastructure/providers/
+- [ ] 테스트 이동
+  - [ ] test_logger.cpp → tests/infrastructure/
+  - [ ] test_config_file.cpp → tests/infrastructure/
+  - [ ] test_thread_pool.cpp → tests/infrastructure/
+- [ ] #include 경로 수정
+- [ ] CMakeLists.txt 업데이트
+- [ ] 빌드 및 테스트 검증
+
+### Phase 11.5: 최종 검증 및 문서화
+- [ ] 전체 빌드 성공 확인
+- [ ] 모든 단위 테스트 통과 (114 tests)
+- [ ] 모든 통합 테스트 통과 (40 tests)
+- [ ] clang-format 적용 및 검증
+- [ ] clang-tidy 검증
+- [ ] cpplint 검증
+- [ ] architecture.md 최종 검토
+- [ ] README.md 업데이트 (새 구조 반영)
+- [ ] .github/instructions/ 파일들 검토 및 업데이트
+
+### Phase 11 Definition of Done
+- [ ] 모든 파일이 Clean Architecture 레이어에 맞게 이동
+- [ ] #include 경로가 레이어 구조 반영 (domain/, application/, adapters/, infrastructure/)
+- [ ] CMakeLists.txt가 새 구조 반영
+- [ ] 모든 테스트 통과 (114 unit + 40 integration)
+- [ ] 코드 품질 도구 통과 (clang-format, clang-tidy, cpplint)
+- [ ] 문서 업데이트 완료
+- [ ] 의존성 방향 규칙 준수 확인 (Infrastructure → Adapters → Application → Domain)
+
+---
+
 ## Phase 10: Semantic Search (LLM 기반 의미론적 검색)
 ### 목표
 파일 내용의 의미를 이해하고 자연어 쿼리로 관련 파일을 찾는 기능 추가
@@ -282,10 +407,12 @@
 - [ ] 성능 벤치마크 결과 문서화
 
 ## 현재 진행 상황
-- Phase: 9 완료 ✅, Phase 10 준비 중 (Semantic Search 설계)
-- 완료율: 85% (전통적 검색 완성, LLM 기반 검색 추가 예정)
-- 총 코드: ~4,100 라인 (헤더 + 구현)
-- 총 테스트: 98 단위 테스트 + 40 통합 테스트 = 138 테스트
+- **Phase: 11 진행 중 (Clean Architecture Refactoring) 🔴 최우선**
+- Phase 9 완료 ✅, Phase 10 부분 완료 (인터페이스 설계, Mock 구현, 코어 로직)
+- 완료율: 88% (전통적 검색 완성, Semantic Search 기반 구조 완료)
+- 총 코드: ~4,300 라인 (헤더 + 구현)
+- 총 테스트: 114 단위 테스트 + 40 통합 테스트 = 154 테스트
+- **다음 작업: Phase 11 Architecture Refactoring (폴더 구조 재편성)**
 
 ### Phase 10 예상 추가
 - 예상 코드: +2,000 라인 (SemanticSearcher, Providers, VectorStore)
