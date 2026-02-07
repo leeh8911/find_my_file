@@ -87,15 +87,15 @@
 - phase는 "의미 있는 통합 단위"이며 내부에 여러 todo item을 포함할 수 있다
 
 ### Phase Naming
-- 브랜치 이름은 `phase/<slug>` 형식을 사용한다
-  - 예: `phase/bootstrap`
-  - 예: `phase/core-indexer`
-  - 예: `phase/semantic-search`
+- 브랜치 이름은 `feat/<task-id>` 형식을 사용한다
+  - 예: `feat/TASK-001`
+  - 예: `feat/TODO-042`
+  - 예: `feat/PHASE-SEMANTIC-SEARCH`
 
 ### Workflow
 1. `main`에서 다음 phase를 `docs/todos.md` 기준으로 결정한다
-2. `phase/<slug>` 브랜치를 생성한다
-3. phase 브랜치에서 todo item들을 **TDD + 단계별 커밋**으로 수행한다
+2. `feat/<task-id>` 브랜치를 생성한다
+3. feat 브랜치에서 todo item들을 **TDD + 단계별 커밋**으로 수행한다
 4. todo 상태 변경은 항상 `docs:` 커밋으로 분리한다
 5. phase 범위의 todo가 완료되면 **통합 테스트를 수행**한다
 6. 모든 조건을 만족하면 `main`으로 병합한다
@@ -112,9 +112,9 @@
 
 병합 커밋 메시지 권장 형식:
 ```
-merge: phase <slug>
+merge: feat <task-id>
 
-<phase 설명>
+<작업 설명>
 - 완료된 주요 기능
 - 테스트 결과
 ```
@@ -363,10 +363,10 @@ Agent는 다음을 자동으로 수행해야 한다:
 ## 📌 Quick Reference
 
 ```bash
-# 새 Phase 시작
+# 새 작업 시작
 git checkout main
 git pull
-git checkout -b phase/my-feature
+git checkout -b feat/TASK-001
 
 # 작업 중 (자동 커밋 + push)
 # 1. Read docs/todos.md
