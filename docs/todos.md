@@ -146,7 +146,9 @@
 
 ## 현재 진행 상황
 - Phase: 9 진행 중 (설정 파일 지원 완료 ✅)
-- 완료율: 85% (Phase 9 설정 파일 기능 완성)
+- 완료율: 85% (핵심 기능 모두 완성, 선택적 기능 일부 남음)
+- 총 코드: ~4,100 라인 (헤더 + 구현)
+- 총 테스트: 98 단위 테스트 + 40 통합 테스트 = 138 테스트
 
 ### 완료된 Phase
 
@@ -170,7 +172,7 @@
 - ✅ CLI 옵션 확장 (-n, -e, -p, -i, -f, -D, --min-size, --max-size)
 - ✅ 테스트 추가 (29/29 tests passed)
 
-### Phase 3 완료 내역
+### Phase 3 완료 내역 ✅
 - ✅ 정규식 검색 기능 추가 (std::regex 통합)
 - ✅ PatternMatcher에 regex 지원 추가
 - ✅ 날짜 필터링 (수정 시간 최소/최대)
@@ -182,7 +184,84 @@
   * .gitignore 스타일 패턴 지원
   * 파일에서 패턴 로드 기능
 - ✅ CLI 옵션 추가 (-x, -c, --ignore)
-- ✅ 모든 기존 테스트 통과 (29/29 tests passed)
+- ✅ 45 단위 테스트, 11 통합 테스트
+
+### Phase 4 완료 내역 ✅
+- ✅ ThreadPool 클래스 구현
+  * std::packaged_task 기반 작업 큐
+  * std::future 결과 반환
+  * 설정 가능한 워커 스레드 수
+- ✅ 병렬 디렉토리 스캔
+  * 하위 디렉토리 자동 병렬화
+  * 스레드 안전 SearchResult (std::mutex)
+- ✅ 성능 개선: 대형 디렉토리에서 ~3배 속도 향상
+- ✅ CLI 옵션 (-j/--threads)
+- ✅ 57 단위 테스트, 15 통합 테스트
+
+### Phase 5 완료 내역 ✅
+- ✅ OutputFormatter 클래스 구현
+  * Default format: 간결한 파일 리스트
+  * Detailed format: 전체 메타데이터
+  * JSON format: 기계 판독 가능 출력
+- ✅ ANSI 컬러 지원 (8가지 색상)
+- ✅ 파일 크기 포맷팅 (B/KB/MB/GB/TB)
+- ✅ ISO 8601 날짜 포맷팅
+- ✅ CLI 옵션 (--format, --color/--no-color)
+- ✅ 69 단위 테스트, 16 통합 테스트
+
+### Phase 6 완료 내역 ✅
+- ✅ Logger 싱글톤 클래스 구현
+  * 4가지 로그 레벨 (DEBUG/INFO/WARN/ERROR)
+  * 콘솔 및 파일 로깅
+  * 타임스탬프 포맷팅
+  * 스레드 안전 (std::mutex)
+- ✅ FileScanner, main.cpp 통합
+- ✅ CLI 옵션 (-v, -v -v, --log-file)
+- ✅ 81 단위 테스트, 32 통합 테스트
+
+### Phase 7 완료 내역 ✅
+- ✅ GitHub Actions CI/CD 파이프라인
+  * 빌드 매트릭스 (Ubuntu/macOS × Debug/Release)
+  * 자동화된 테스트 실행
+  * 코드 품질 체크 (clang-format, cppcheck, clang-tidy)
+- ✅ 모든 테스트 자동화
+- ✅ 릴리스 아티팩트 자동 업로드
+
+### Phase 8 완료 내역 ✅
+- ✅ 포괄적인 README.md (470+ 라인)
+  * 기능 설명 및 40+ 사용 예제
+  * 설치 가이드 및 빌드 방법
+  * CLI 옵션 전체 표
+  * 아키텍처 개요
+- ✅ MIT LICENSE 추가
+- ✅ CONTRIBUTING.md (기여 가이드)
+  * Code of Conduct
+  * 버그 리포트 및 PR 가이드
+  * 코딩 스타일 (Google C++ Style)
+- ✅ install.sh 자동 설치 스크립트
+  * 전제 조건 확인
+  * 옵션: --system, --no-tests, --clean
+- ✅ 아키텍처 문서화 (architecture.md)
+
+### Phase 9 진행 내역 (85% 완료) 🔄
+- ✅ ConfigFile 클래스 구현
+  * INI 스타일 파서
+  * [default] 및 [search.*] 섹션
+  * Boolean, 숫자, 문자열 파싱
+  * 인라인 주석 지원
+- ✅ 다중 위치 로드
+  * 현재 디렉토리 (./.findmyfilesrc)
+  * 홈 디렉토리 (~/.findmyfilesrc)
+  * XDG config (~/.config/find_my_files/config)
+- ✅ CommandLineParser 통합
+  * parse() 오버로드로 기본 config 지원
+  * CLI 우선순위 (CLI > Config > 기본값)
+- ✅ 98 단위 테스트, 40 통합 테스트
+- ✅ 예제 설정 파일 (examples/.findmyfilesrc)
+- ✅ README 및 architecture.md 업데이트
+- ⏳ 플러그인 시스템 (선택적, 향후)
+- ⏳ GUI 버전 (장기 목표)
+- ⏳ 데이터베이스 인덱싱 (장기 목표)
 
 ## 우선순위 표시
 - 🔴 높음 (High): Phase 1-3

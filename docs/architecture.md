@@ -163,7 +163,7 @@ Find My Files (fmf)는 C++17 기반의 파일 검색 도구로, 명령줄 인터
 - 8가지 ANSI 색상 (Reset, Red, Green, Blue, Yellow, Cyan, Magenta, Gray)
 - 터미널 환경에 따라 활성화/비활성화 가능
 
-#### 9. Logger (`logger.h/cpp`)
+#### 9. Logger (`logger.h/cpp`) - Phase 6
 애플리케이션 전역 로깅을 제공하는 싱글톤 클래스
 
 **책임:**
@@ -211,13 +211,82 @@ logger.error("Failed to open file: " + path);
 **통합:**
 - FileScanner: 디렉토리 접근 에러, 파일 처리 에러 로깅
 - main.cpp: 애플리케이션 라이프사이클, 설정 정보 로깅
-- CommandLineParser: 파라미터 파싱 및 검증 로깅 (예정)
-- ContentSearcher: 파일 읽기 에러 로깅 (예정)
+- CommandLineParser: 파라미터 파싱 시 로깅
+- ContentSearcher: 파일 읽기 에러 로깅
 
 **CLI 옵션:**
 - `-v`: INFO 레벨 활성화
 - `-v -v`: DEBUG 레벨 활성화
 - `--log-file FILE`: 로그를 파일에 기록
+
+#### 10. CommandLineParser (`command_line_parser.h/cpp`) - Phase 2+
+CLI 인자 파싱 및 검증을 담당하는 클래스
+
+**책임:**
+- 명령줄 인자 파싱 및 검증
+- ApplicationConfig 객체 생성 (DTO 패턴)
+- 설정 파일과 CLI 인자 병합 (Phase 9)
+- 도움말 메시지 출력
+- 옵션 검증 및 에러 처리
+
+**주요 구성 요소:**
+- `ApplicationConfig` 구조체: 모든 설정을 포함하는 DTO
+  * 검색 옵션: recursive, followLinks, maxDepth
+  * 성능 옵션: threadCount
+  * 출력 옵션: outputFormat, useColor, verbosity
+  * 로깅: logFile
+  * SearchCriteria: 검색 필터
+- `parse(argc, argv)`: 기본 파싱
+- `parse(argc, argv, defaultConfig)`: 설정 파일 병합 파싱
+- `parseOption()`: 개별 옵션 처리
+- `validateConfig()`: 설정 검증
+- `printUsage()`: 도움말 출력
+
+**지원 옵션:**
+- 검색: `-n/--name`, `-e/--ext`, `-p/--path`, `-c/--content`
+- 필터: `-i/--ignore-case`, `-x/--regex`, `-f/--files-only`, `-D/--dirs-only`
+- 크기: `--min-size`, `--max-size`
+- 순회: `-r/--recursive`, `-d/--max-depth`, `-l/--follow-links`, `--ignore`
+- 성능: `-j/--threads`
+- 출력: `--format`, `--color/--no-color`
+- 로깅: `-v/--verbose`, `--log-file`
+
+**통합:**
+- ConfigFile: 기본 설정 제공 (Phase 9)
+- main.cpp: 파싱된 설정으로 FileScanner 구성
+- SearchCriteria: 검색 조건 전달
+
+**디자인 패턴:**
+- DTO (Data Transfer Object): ApplicationConfig
+- SRP: CLI 파싱 로직만 담당
+
+#### 11. ConfigFile (`config_file.h/cpp`) - Phase 9
+INI 스타일 설정 파일 파싱 클래스
+
+**책임:**
+- .findmyfilesrc 파일 로드 및 파싱
+- 다중 위치 탐색 (현재 디렉토리, 홈, XDG config)
+- `[default]` 섹션에서 기본 설정 추출
+- `[search.*]` 섹션에서 저장된 검색 프로필 추출
+- ApplicationConfig 객체 생성
+
+**주요 메서드:**
+- `load(filepath)`: 특정 파일 로드
+- `loadDefault()`: 기본 위치 탐색 및 로드
+- `getDefaultConfig()`: [default] 섹션 반환
+- `getSavedSearch(name)`: 저장된 검색 반환
+- `getSavedSearchNames()`: 모든 저장된 검색 이름
+
+**파싱 기능:**
+- INI 스타일 섹션 파싱
+- Boolean 파싱: true/yes/on/1, false/no/off/0
+- 인라인 주석 처리 (#, ;)
+- 쉼표로 구분된 확장자 목록
+- 모든 CLI 옵션 지원
+
+**통합:**
+- CommandLineParser: 기본 설정 제공
+- main.cpp: 설정 우선순위 관리 (CLI > Config > 기본값)
 
 ## Data Flow
 
@@ -243,15 +312,29 @@ logger.error("Failed to open file: " + path);
 ### Component Dependencies
 ```
 main.cpp
-  ├─ FileScanner
+  ├─ ConfigFile (Phase 9)
+  │  └─ ApplicationConfig 생성
+  ├─ CommandLineParser
+  │  ├─ ApplicationConfig (DTO)
+  │  └─ SearchCriteria 설정
+  ├─ Logger (Phase 6)
+  │  ├─ 파일 로깅
+  │  └─ 콘솔 로깅
+  ├─ FileScanner (코어)
   │  ├─ FileInfo
   │  ├─ SearchCriteria
   │  ├─ SearchResult
   │  ├─ PatternMatcher
   │  ├─ ContentSearcher
   │  ├─ IgnorePatterns
-  │  └─ ThreadPool
-  └─ OutputFormatter → 결과 출력
+  │  ├─ ThreadPool (Phase 4)
+  │  └─ Logger
+  └─ OutputFormatter (Phase 5)
+     └─ SearchResult 출력
+
+Configuration Flow:
+ConfigFile → CommandLineParser → ApplicationConfig → main → FileScanner
+(CLI args override config file settings)
 ```
 
 ## Design Patterns
@@ -300,8 +383,9 @@ main.cpp
 - ThreadPoolTest: ThreadPool 병렬 실행 (12 tests)
 - OutputFormatterTest: OutputFormatter 출력 (10 tests)
 - LoggerTest: Logger 로깅 시스템 (12 tests)
+- ConfigFileTest: ConfigFile 설정 파일 (17 tests)
 
-**Total: 81 unit tests**
+**Total: 98 unit tests (10 test suites)**
 
 ### Integration Tests
 실제 파일 시스템 사용 시나리오 테스트:
@@ -311,8 +395,9 @@ main.cpp
 - uc_parallel_scan.sh: 병렬 스캔 성능 (4 tests)
 - uc_output_formats.sh: 출력 형식 테스트 (7 tests)
 - uc_logging.sh: 로깅 기능 테스트 (10 tests)
+- uc_config_file.sh: 설정 파일 지원 (8 tests)
 
-**Total: 32 integration tests (6 test suites)**
+**Total: 40 integration tests (7 test suites)**
 
 ## Phase Implementation Status
 
@@ -347,11 +432,42 @@ main.cpp
 - CLI 옵션 (--format default|detailed|json)
 - 7개 통합 테스트 (uc_output_formats.sh)
 
-### Upcoming Phases
-- **Phase 6**: 에러 처리 및 로깅
-- **Phase 7**: 추가 테스트 및 커버리지
-- **Phase 8**: 문서화 및 사용자 가이드
-- **Phase 9**: 배포 준비 (패키징, 설치 스크립트)
+### Phase 6: 에러 처리 및 로깅 ✅
+- Logger 싱글톤 클래스 구현
+- 4가지 로그 레벨 (DEBUG/INFO/WARN/ERROR)
+- 콘솔 및 파일 로깅 지원
+- 타임스탬프와 로그 레벨 포맷팅
+- 스레드 안전 로깅 (std::mutex)
+- CLI 옵션 (-v, -v -v, --log-file)
+- FileScanner, main.cpp 통합
+- 12개 단위 테스트, 10개 통합 테스트
+
+### Phase 7: 테스트 및 CI/CD ✅
+- GitHub Actions CI/CD 파이프라인
+- 빌드 매트릭스 (Ubuntu/macOS × Debug/Release)
+- 자동화된 단위 테스트 실행
+- 코드 품질 체크 (clang-format, cppcheck, clang-tidy)
+- 아티팩트 업로드 및 릴리스 자동화
+- 81개 단위 테스트, 32개 통합 테스트
+
+### Phase 8: 문서화 및 배포 ✅
+- 포괄적인 README.md (470+ 라인, 40+ 예제)
+- MIT LICENSE 추가
+- CONTRIBUTING.md (기여 가이드, 코딩 스타일)
+- install.sh 자동 설치 스크립트
+- 아키텍처 문서화 (architecture.md)
+- 프로젝트 로드맵 (todos.md)
+
+### Phase 9: 추가 기능 (진행 중 - 85% 완료) 🔄
+- ✅ ConfigFile 클래스 (INI 스타일 파서)
+- ✅ .findmyfilesrc 파일 지원
+- ✅ 다중 위치 로드 (현재 디렉토리, 홈, XDG)
+- ✅ CLI 우선순위 (CLI > Config > 기본값)
+- ✅ 17개 단위 테스트, 8개 통합 테스트
+- ✅ 예제 설정 파일 및 문서화
+- ⏳ 플러그인 시스템 (향후)
+- ⏳ GUI 버전 (장기 목표)
+- ⏳ 데이터베이스 인덱싱 (장기 목표)
 
 ## Build and Run
 
@@ -394,39 +510,69 @@ bash run_all.sh
 find_my_files/
 ├── CMakeLists.txt              # Build configuration
 ├── CPPLINT.cfg                 # Linter configuration
+├── LICENSE                     # MIT License
+├── README.md                   # Project documentation
+├── CONTRIBUTING.md             # Contribution guidelines
+├── install.sh                  # Installation script
+├── .github/
+│   └── workflows/
+│       └── ci.yml             # GitHub Actions CI/CD
 ├── docs/
 │   ├── architecture.md         # This document
 │   └── todos.md               # Phase-based TODO list
-├── include/                    # Public headers
-│   ├── content_searcher.h
-│   ├── file_info.h
-│   ├── file_scanner.h
-│   ├── ignore_patterns.h
-│   ├── pattern_matcher.h
-│   ├── search_criteria.h
-│   └── search_result.h
-├── src/                        # Implementation files
+├── examples/
+│   └── .findmyfilesrc         # Example config file
+├── include/                    # Public headers (12 files, ~2100 lines)
+│   ├── command_line_parser.h  # CLI argument parser
+│   ├── config_file.h          # Configuration file parser
+│   ├── content_searcher.h     # File content search
+│   ├── file_info.h            # File metadata
+│   ├── file_scanner.h         # Directory scanner
+│   ├── ignore_patterns.h      # .gitignore style patterns
+│   ├── logger.h               # Logging system
+│   ├── output_formatter.h     # Output formatting
+│   ├── pattern_matcher.h      # Pattern matching utilities
+│   ├── search_criteria.h      # Search filters
+│   ├── search_result.h        # Result container
+│   └── thread_pool.h          # Thread pool
+├── src/                        # Implementation files (13 files, ~2000 lines)
+│   ├── command_line_parser.cpp
+│   ├── config_file.cpp
 │   ├── content_searcher.cpp
 │   ├── file_info.cpp
 │   ├── file_scanner.cpp
 │   ├── ignore_patterns.cpp
-│   ├── main.cpp                # CLI entry point
+│   ├── logger.cpp
+│   ├── main.cpp               # CLI entry point
+│   ├── output_formatter.cpp
 │   ├── pattern_matcher.cpp
 │   ├── search_criteria.cpp
-│   └── search_result.cpp
-├── test/                       # Testing
-│   └── integrationtest/        # Integration test scripts
+│   ├── search_result.cpp
+│   └── thread_pool.cpp
+├── test/                       # Integration tests
+│   └── integrationtest/        # 7 test suites, 40 tests
 │       ├── run_all.sh
+│       ├── uc_config_file.sh
 │       ├── uc_content_search.sh
 │       ├── uc_ignore_patterns.sh
+│       ├── uc_logging.sh
+│       ├── uc_output_formats.sh
+│       ├── uc_parallel_scan.sh
 │       └── uc_regex_search.sh
-└── tests/                      # Unit tests
+└── tests/                      # Unit tests (10 files, 98 tests)
+    ├── test_command_line_parser.cpp
+    ├── test_config_file.cpp
     ├── test_content_searcher.cpp
     ├── test_file_info.cpp
     ├── test_file_scanner.cpp
     ├── test_ignore_patterns.cpp
+    ├── test_logger.cpp
+    ├── test_output_formatter.cpp
     ├── test_pattern_matcher.cpp
-    └── test_search_criteria.cpp
+    ├── test_search_criteria.cpp
+    └── test_thread_pool.cpp
+
+Total: ~4100 lines of C++ code (headers + implementation)
 ```
 
 ## Performance Considerations
