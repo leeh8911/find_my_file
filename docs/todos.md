@@ -160,7 +160,15 @@
 - [x] 단위 테스트: 인터페이스 mock 구현
 - 커밋: fc5d9a1 "feat: implement semantic search interfaces"
 
-### 2. Mock Provider 구현 (테스트용)
+### 2. Mock Provider 구현 (테스트용) ✅ **완료**
+- [x] MockEmbeddingProvider 클래스
+  - [x] 고정된 테스트 벡터 반환
+  - [x] 결정론적 동작 보장
+- [x] MockVectorStore 클래스
+  - [x] In-memory map 기반 저장
+  - [x] 단순 cosine similarity 검색
+- [x] 단위 테스트: Mock을 사용한 기본 시나리오
+- 커밋: 70fc10e "feat: extract mock classes to reusable headers"
 - [ ] MockEmbeddingProvider 클래스
   - [ ] 고정된 테스트 벡터 반환
   - [ ] 결정론적 동작 보장
@@ -190,15 +198,18 @@
 - [ ] 단위 테스트: HTTP mock
 - [ ] 통합 테스트: 실제 API 호출 (CI skip 가능)
 
-### 5. SemanticSearcher 코어 로직
-- [ ] SemanticSearcher 클래스 구현
-  - [ ] indexFile(filepath) - 파일 인덱싱
-  - [ ] indexDirectory(dirpath) - 디렉토리 인덱싱
-  - [ ] search(query, topK) - 검색 수행
-  - [ ] searchSimilar(filepath, topK) - 유사 파일 찾기
-- [ ] Chunking 전략
-  - [ ] FixedSizeChunker (기본)
-  - [ ] SlidingWindowChunker
+### 5. SemanticSearcher 코어 로직 ✅ **완료**
+- [x] SemanticSearcher 클래스 구현
+  - [x] indexFile(filepath) - 파일 인덱싱
+  - [x] indexDirectory(dirpath) - 디렉토리 인덱싱
+  - [x] search(query, topK) - 검색 수행
+  - [x] searchSimilar(filepath, topK) - 유사 파일 찾기
+- [x] Chunking 전략
+  - [x] FixedSizeChunker (기본)
+  - [x] Configurable chunk size and overlap
+- [x] File type detection (extension-based)
+- [x] 단위 테스트: 각 메서드별 테스트
+- 커밋: a0d19af "feat: implement SemanticSearcher core logic"
 - [ ] Index 관리
   - [ ] .fmf_index/ 디렉토리 구조
   - [ ] metadata.json (파일 경로, 타임스탬프)
