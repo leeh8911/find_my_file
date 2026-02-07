@@ -17,6 +17,7 @@ option(ENABLE_LOCAL_EMBEDDING "Enable local embedding with ONNX Runtime" OFF)
 # Find ONNX Runtime (optional)
 if(ENABLE_LOCAL_EMBEDDING)
     find_package(onnxruntime QUIET)
+
     if(onnxruntime_FOUND)
         message(STATUS "ONNX Runtime found - Local embedding enabled")
         add_compile_definitions(ENABLE_ONNX_RUNTIME)

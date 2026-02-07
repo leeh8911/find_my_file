@@ -29,15 +29,9 @@ class DummyModelFile
         file << "dummy model content";
     }
 
-    ~DummyModelFile()
-    {
-        std::filesystem::remove(m_path);
-    }
+    ~DummyModelFile() { std::filesystem::remove(m_path); }
 
-    std::string path() const
-    {
-        return m_path;
-    }
+    std::string path() const { return m_path; }
 
  private:
     std::string m_path;
@@ -46,11 +40,9 @@ class DummyModelFile
 /**
  * @brief Helper: Calculate cosine similarity
  */
-float cosineSimilarity(const std::vector<float>& a,
-                       const std::vector<float>& b)
+float cosineSimilarity(const std::vector<float>& a, const std::vector<float>& b)
 {
-    if (a.size() != b.size())
-        return 0.0f;
+    if (a.size() != b.size()) return 0.0f;
 
     float dot = 0.0f;
     float normA = 0.0f;
@@ -73,18 +65,14 @@ TEST(LocalEmbeddingProviderTest, ConstructorSuccess)
 {
     DummyModelFile model;
 
-    EXPECT_NO_THROW({
-        LocalEmbeddingProvider provider(model.path());
-    });
+    EXPECT_NO_THROW({ LocalEmbeddingProvider provider(model.path()); });
 }
 
 // Test: Constructor fails with non-existent model
 TEST(LocalEmbeddingProviderTest, ConstructorFailsWithInvalidPath)
 {
     EXPECT_THROW(
-        {
-            LocalEmbeddingProvider provider("non_existent_model.onnx");
-        },
+        { LocalEmbeddingProvider provider("non_existent_model.onnx"); },
         std::runtime_error);
 }
 

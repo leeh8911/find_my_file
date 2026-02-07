@@ -59,7 +59,7 @@ class LocalEmbeddingProvider : public IEmbeddingProvider
      * @throws std::runtime_error if model file not found or invalid
      */
     explicit LocalEmbeddingProvider(const std::string& modelPath,
-                                     bool useGpu = false);
+                                    bool useGpu = false);
 
     ~LocalEmbeddingProvider() override;
 
@@ -80,8 +80,7 @@ class LocalEmbeddingProvider : public IEmbeddingProvider
      *
      * @throws std::runtime_error on inference errors
      */
-    std::vector<float> generateEmbedding(
-        const std::string& text) override;
+    std::vector<float> generateEmbedding(const std::string& text) override;
 
     /**
      * @brief Generate embeddings for multiple texts (batch)

@@ -175,8 +175,9 @@ TEST(SimpleTokenizerTest, MultipleWhitespaces)
 TEST(SimpleTokenizerTest, TokenIDRange)
 {
     SimpleTokenizer tokenizer;
-    auto tokens = tokenizer.tokenize("The quick brown fox jumps over the lazy "
-                                     "dog");
+    auto tokens = tokenizer.tokenize(
+        "The quick brown fox jumps over the lazy "
+        "dog");
 
     for (auto token : tokens)
     {

@@ -81,10 +81,7 @@ class LocalEmbeddingProvider::Impl
         return embeddings;
     }
 
-    size_t getDimension() const
-    {
-        return m_dimension;
-    }
+    size_t getDimension() const { return m_dimension; }
 
     std::vector<int64_t> tokenize(const std::string& text) const
     {

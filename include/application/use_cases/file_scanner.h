@@ -6,10 +6,10 @@
 #include <memory>
 #include <string>
 
+#include "application/services/ignore_patterns.h"
 #include "domain/entities/file_info.h"
 #include "domain/entities/search_result.h"
 #include "domain/value_objects/search_criteria.h"
-#include "application/services/ignore_patterns.h"
 #include "infrastructure/threading/thread_pool.h"
 
 namespace fmf

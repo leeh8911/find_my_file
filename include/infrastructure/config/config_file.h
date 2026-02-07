@@ -52,7 +52,7 @@ namespace fmf
  */
 struct ConfigSection
 {
-    std::string name;  ///< Section name
+    std::string name;                           ///< Section name
     std::map<std::string, std::string> values;  ///< Key-value pairs
 };
 
@@ -176,7 +176,7 @@ class ConfigFile
      */
     std::string trim(const std::string& str) const;
 
-    bool loaded_ = false;  ///< Whether config was loaded
+    bool loaded_ = false;     ///< Whether config was loaded
     std::string loadedPath_;  ///< Path to loaded config file
     std::map<std::string, ConfigSection> sections_;  ///< Parsed sections
 };

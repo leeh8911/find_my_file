@@ -44,7 +44,7 @@ class ConfigFileTest : public ::testing::Test
      * @return Full path to created file
      */
     std::string createConfigFile(const std::string& filename,
-                                  const std::string& content)
+                                 const std::string& content)
     {
         fs::path filepath = testDir_ / filename;
         std::ofstream file(filepath);

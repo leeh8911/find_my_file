@@ -7,9 +7,9 @@
 #include <string>
 #include <vector>
 
+#include "application/ports/i_vector_store.h"
 #include "domain/entities/file_info.h"
 #include "domain/entities/semantic_result.h"
-#include "application/ports/i_vector_store.h"
 
 namespace fmf
 {

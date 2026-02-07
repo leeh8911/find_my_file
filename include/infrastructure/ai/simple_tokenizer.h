@@ -112,10 +112,7 @@ class SimpleTokenizer
     /**
      * @brief Get maximum sequence length
      */
-    size_t getMaxLength() const
-    {
-        return m_maxLength;
-    }
+    size_t getMaxLength() const { return m_maxLength; }
 
  private:
     /**
@@ -130,8 +127,7 @@ class SimpleTokenizer
 
         std::string result = text;
         std::transform(result.begin(), result.end(), result.begin(),
-                       [](unsigned char c)
-                       { return std::tolower(c); });
+                       [](unsigned char c) { return std::tolower(c); });
         return result;
     }
 
@@ -140,8 +136,7 @@ class SimpleTokenizer
      */
     std::string stripPunctuation(const std::string& word) const
     {
-        if (word.empty())
-            return word;
+        if (word.empty()) return word;
 
         size_t start = 0;
         size_t end = word.length();
