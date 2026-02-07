@@ -4,9 +4,10 @@
  *
  * This file contains the main function which orchestrates the file searching
  * process by:
- * 1. Parsing command line arguments using Command LineParser
- * 2. Configuring and executing the file scanner
- * 3. Formatting and displaying results using OutputFormatter
+ * 1. Loading configuration from .findmyfilesrc (if exists)
+ * 2. Parsing command line arguments using CommandLineParser
+ * 3. Configuring and executing the file scanner
+ * 4. Formatting and displaying results using OutputFormatter
  *
  * The main function follows the Dependency Inversion Principle by depending
  * on abstractions (SearchCriteria, OutputFormatter) rather than concrete
@@ -16,6 +17,7 @@
 #include <iostream>
 
 #include "command_line_parser.h"
+#include "config_file.h"
 #include "file_scanner.h"
 #include "ignore_patterns.h"
 #include "logger.h"
@@ -27,10 +29,14 @@ using namespace fmf;
  * @brief Main entry point
  *
  * Orchestrates the entire file search workflow:
+ * - Loads configuration from .findmyfilesrc (if exists)
  * - Parses CLI arguments using CommandLineParser (SRP)
+ * - Merges config file and CLI settings (CLI overrides config file)
  * - Configures file scanner with search criteria
  * - Executes search with optional parallelization
  * - Formats and outputs results using OutputFormatter
+ *
+ * Configuration precedence: CLI args > config file > defaults
  *
  * @param argc Argument count
  * @param argv Argument vector
@@ -38,10 +44,26 @@ using namespace fmf;
  */
 int main(int argc, char* argv[])
 {
-    // Parse command line arguments using CommandLineParser (SRP: separated
-    // parsing logic)
+    // Step 1: Try to load configuration from default locations
+    ConfigFile configFile;
+    ApplicationConfig defaultConfig;  // Start with empty default config
+
+    if (configFile.loadDefault())
+    {
+        // Load default config from file if available
+        auto fileConfig = configFile.getDefaultConfig();
+        if (fileConfig.has_value())
+        {
+            defaultConfig = *fileConfig;
+            std::cerr << "Loaded configuration from: "
+                      << configFile.getLoadedPath() << "\n";
+        }
+    }
+
+    // Step 2: Parse command line arguments
+    // CLI arguments will override config file settings
     CommandLineParser parser;
-    auto configOpt = parser.parse(argc, argv);
+    auto configOpt = parser.parse(argc, argv, defaultConfig);
 
     if (!configOpt)
     {

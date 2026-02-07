@@ -523,3 +523,99 @@ find_my_files/
 - ✅ File metadata reading
 - ✅ CMake build system
 
+## Configuration System (Phase 9)
+
+### ConfigFile Class
+
+#### Purpose
+Provides configuration file support for Find My Files, allowing users to define default settings and saved search profiles in `.findmyfilesrc` files.
+
+#### Key Features
+- **INI-style parsing**: Simple section-based configuration format
+- **Multiple locations**: Current directory, home directory, XDG config
+- **Default settings**: `[default]` section for base configuration
+- **Search profiles**: `[search.*]` sections for saved searches
+- **CLI override**: Command-line arguments take precedence
+
+#### Architecture
+
+```
+ConfigFile
+├── load(filepath)           : Load specific config file
+├── loadDefault()            : Search default locations
+├── getDefaultConfig()       : Get [default] section
+├── getSavedSearch(name)     : Get [search.name] section
+└── getSavedSearchNames()    : List all saved searches
+
+Private:
+├── parse(content)           : Parse INI-style content
+├── sectionToConfig(section) : Convert section to ApplicationConfig
+├── parseBool(value)         : Parse boolean values
+└── trim(str)                : String utility
+```
+
+#### Design Pattern
+- **Strategy Pattern**: Different parsing strategies for different value types
+- **Factory Method**: `sectionToConfig` creates ApplicationConfig objects
+- **SRP**: Only handles config file parsing, delegates to CommandLineParser for merging
+
+#### Configuration Format
+
+```ini
+# Comments start with # or ;
+[default]
+recursive=true
+threads=4
+format=detailed
+color=true
+
+[search.cpp_files]
+extensions=.cpp,.h,.hpp
+files_only=true
+```
+
+#### Integration with CLI
+
+```cpp
+// main.cpp workflow:
+1. ConfigFile.loadDefault()           // Load from default locations
+2. configFile.getDefaultConfig()      // Extract default settings
+3. CommandLineParser.parse(argc, argv, defaultConfig)  // Parse CLI with defaults
+4. Result: CLI args override config file settings
+```
+
+#### Testing
+- **Unit Tests**: 17 tests covering parsing, sections, data types
+  - Empty files, comments, whitespace handling
+  - Boolean parsing (true/yes/on/1, false/no/off/0)
+  - Multiple sections and saved searches
+  - All configuration option types
+- **Integration Tests**: 8 test scenarios
+  - Config file loading from current directory
+  - Recursive search from config
+  - CLI override of config settings
+  - Logging and verbosity from config
+  - Ignore patterns and depth limits
+
+#### Example Usage
+
+```cpp
+ConfigFile config;
+if (config.loadDefault()) {
+    auto defaultConfig = config.getDefaultConfig();
+    // Use as base for CLI parsing
+    parser.parse(argc, argv, *defaultConfig);
+}
+```
+
+### Configuration Precedence
+
+```
+CLI Arguments (highest)
+    ↓
+Config File (middle)
+    ↓
+Built-in Defaults (lowest)
+```
+
+This design ensures flexibility: users can set project-wide defaults in `.findmyfilesrc` while still overriding specific options via CLI.

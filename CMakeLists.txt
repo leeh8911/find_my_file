@@ -27,6 +27,7 @@ set(SOURCES
     src/output_formatter.cpp
     src/command_line_parser.cpp
     src/logger.cpp
+    src/config_file.cpp
 )
 
 # Header files
@@ -42,6 +43,7 @@ set(HEADERS
     include/output_formatter.h
     include/command_line_parser.h
     include/logger.h
+    include/config_file.h
 )
 
 # Main executable
@@ -75,6 +77,7 @@ add_executable(tests
     tests/test_thread_pool.cpp
     tests/test_output_formatter.cpp
     tests/test_logger.cpp
+    tests/test_config_file.cpp
     ${SOURCES}
 )
 

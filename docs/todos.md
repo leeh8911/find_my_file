@@ -122,9 +122,17 @@
   - [x] CONTRIBUTING.md (기여 가이드)
 
 ## Phase 9: 추가 기능 (선택사항)
-- [ ] 설정 파일 지원
-  - [ ] .findmyfilesrc 파일
-  - [ ] 프리셋 검색 패턴
+- [x] 설정 파일 지원 ✅
+  - [x] ConfigFile 클래스 구현 (INI 스타일 파서)
+  - [x] .findmyfilesrc 파일 로드 (현재 디렉토리, 홈, XDG config)
+  - [x] 기본 설정 섹션 [default]
+  - [x] 저장된 검색 프로필 [search.*]
+  - [x] CLI 인수 우선 적용 (설정 병합)
+  - [x] CommandLineParser 오버로드 (기본 config 지원)
+  - [x] 단위 테스트 (17 tests)
+  - [x] 통합 테스트 (8 test cases)
+  - [x] 예제 설정 파일 (examples/.findmyfilesrc)
+  - [x] README 문서화 (Configuration File 섹션)
 - [ ] 플러그인 시스템
   - [ ] 커스텀 필터 추가
   - [ ] 커스텀 출력 포맷
@@ -137,8 +145,8 @@
   - [ ] 빠른 검색을 위한 인덱스
 
 ## 현재 진행 상황
-- Phase: 6 완료 ✅ (Phase 7, 8 대부분 완료)
-- 완료율: 80% (주요 기능 모두 완성, 문서화 완료)
+- Phase: 9 진행 중 (설정 파일 지원 완료 ✅)
+- 완료율: 85% (Phase 9 설정 파일 기능 완성)
 
 ### 완료된 Phase
 
