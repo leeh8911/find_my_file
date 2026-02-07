@@ -10,163 +10,15 @@
 
 #include <gtest/gtest.h>
 
-#include <algorithm>
-#include <cmath>
 #include <fstream>
-#include <map>
 #include <memory>
 #include <vector>
 
-#include "i_embedding_provider.h"
-#include "i_vector_store.h"
+#include "mock_embedding_provider.h"
+#include "mock_vector_store.h"
 #include "semantic_result.h"
 
-namespace fmf
-{
-
-/**
- * @brief Mock implementation of IEmbeddingProvider for testing
- */
-class MockEmbeddingProvider : public IEmbeddingProvider
-{
- public:
-    std::vector<float> generateEmbedding(const std::string& text) override
-    {
-        // Return a simple deterministic vector based on text length
-        size_t dim = getDimension();
-        std::vector<float> embedding(dim, 0.0f);
-        
-        // Simple hash: use text length as feature
-        if (!text.empty())
-        {
-            embedding[0] = static_cast<float>(text.length()) / 100.0f;
-        }
-        
-        return embedding;
-    }
-
-    std::vector<std::vector<float>> batchGenerate(
-        const std::vector<std::string>& texts) override
-    {
-        std::vector<std::vector<float>> results;
-        for (const auto& text : texts)
-        {
-            results.push_back(generateEmbedding(text));
-        }
-        return results;
-    }
-
-    size_t getDimension() const override { return 128; }
-};
-
-/**
- * @brief Mock implementation of IVectorStore for testing
- */
-class MockVectorStore : public IVectorStore
-{
- public:
-    void add(const std::string& id, const std::vector<float>& vector,
-             const VectorMetadata& metadata) override
-    {
-        vectors_[id] = vector;
-        metadata_[id] = metadata;
-    }
-
-    std::vector<SemanticResult> search(const std::vector<float>& queryVector,
-                                       size_t topK) override
-    {
-        std::vector<SemanticResult> results;
-        
-        // Simple cosine similarity search
-        for (const auto& [id, vector] : vectors_)
-        {
-            float similarity = computeSimilarity(queryVector, vector);
-            
-            FileInfo fileInfo(metadata_[id].filepath);
-            SemanticResult result(fileInfo, similarity);
-            result.matchedChunks.push_back(metadata_[id].chunkText);
-            
-            results.push_back(result);
-        }
-        
-        // Sort by score and return top-K
-        std::sort(results.begin(), results.end(),
-                  [](const SemanticResult& a, const SemanticResult& b) {
-                      return a.relevanceScore > b.relevanceScore;
-                  });
-        
-        if (results.size() > topK)
-        {
-            results.resize(topK);
-        }
-        
-        return results;
-    }
-
-    bool remove(const std::string& id) override
-    {
-        auto it = vectors_.find(id);
-        if (it != vectors_.end())
-        {
-            vectors_.erase(it);
-            metadata_.erase(id);
-            return true;
-        }
-        return false;
-    }
-
-    bool save(const std::string& path) override
-    {
-        // Mock: always succeed
-        (void)path;  // Mark as unused
-        return true;
-    }
-
-    bool load(const std::string& path) override
-    {
-        // Mock: always succeed
-        (void)path;  // Mark as unused
-        return true;
-    }
-
-    size_t size() const override { return vectors_.size(); }
-
-    void clear() override
-    {
-        vectors_.clear();
-        metadata_.clear();
-    }
-
- private:
-    float computeSimilarity(const std::vector<float>& a,
-                            const std::vector<float>& b)
-    {
-        if (a.size() != b.size())
-            return 0.0f;
-        
-        float dot = 0.0f;
-        float mag_a = 0.0f;
-        float mag_b = 0.0f;
-        
-        for (size_t i = 0; i < a.size(); ++i)
-        {
-            dot += a[i] * b[i];
-            mag_a += a[i] * a[i];
-            mag_b += b[i] * b[i];
-        }
-        
-        mag_a = std::sqrt(mag_a);
-        mag_b = std::sqrt(mag_b);
-        
-        if (mag_a == 0.0f || mag_b == 0.0f)
-            return 0.0f;
-        
-        return dot / (mag_a * mag_b);
-    }
-
-    std::map<std::string, std::vector<float>> vectors_;
-    std::map<std::string, VectorMetadata> metadata_;
-};
+using namespace fmf;
 
 /**
  * @brief Test fixture for semantic interfaces
@@ -370,5 +222,3 @@ TEST_F(SemanticInterfacesTest, SemanticResultWithData)
     // Cleanup
     std::filesystem::remove("/tmp/fmf_test2.txt");
 }
-
-}  // namespace fmf
