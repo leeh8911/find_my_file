@@ -123,6 +123,30 @@ merge: phase <slug>
 
 ## 5. Agent Operating Procedure
 
+### Before Starting Work (필수 체크리스트)
+
+Agent는 **어떤 작업을 시작하기 전에 반드시** 다음을 확인한다:
+
+1. **현재 브랜치 확인** (`git branch`)
+   - ❌ **main 브랜치에서 직접 작업하지 않는다**
+   - ✅ phase 브랜치로 전환 또는 생성
+   
+2. **`docs/todos.md` 읽기**
+   - 다음 Phase 확인
+   - 해당 Phase의 우선순위 작업 파악
+   
+3. **phase 브랜치 존재 여부 확인**
+   - 존재: `git checkout phase/<slug>`
+   - 없음: `git checkout -b phase/<slug>`
+   
+4. **최신 상태 동기화**
+   - `git pull origin main` (main 최신화)
+   - phase 브랜치가 최신 main 기반인지 확인
+
+**절대 규칙**: main 브랜치에서는 문서 업데이트(docs:)만 허용. 코드 작업은 항상 phase 브랜치에서.
+
+### Standard Operating Procedure
+
 Agent가 작업을 수행하는 표준 절차:
 
 1. **`docs/todos.md`를 읽는다**

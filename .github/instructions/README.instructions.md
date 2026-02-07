@@ -95,9 +95,38 @@ C++ 코딩 표준
 
 ## 🎯 Quick Start
 
+### Agent Workflow Checklist (작업 시작 전 필수)
+
+**STOP! 코드를 작성하기 전에 반드시 확인:**
+
+```bash
+# 1. 현재 브랜치 확인
+git branch
+# → main 브랜치라면? 절대 코드 작업 금지! phase 브랜치로 이동
+
+# 2. todos.md에서 다음 Phase 확인
+cat docs/todos.md | grep "Phase"
+
+# 3. phase 브랜치로 전환 또는 생성
+git checkout phase/semantic-search  # 또는
+git checkout -b phase/<new-phase-name>
+
+# 4. 최신 main 동기화
+git checkout main && git pull origin main
+git checkout phase/<name>
+```
+
+**Golden Rule**: 
+- ✅ **phase 브랜치**: 코드 작업 (test, feat, refactor, fix)
+- ✅ **main 브랜치**: 문서만 (docs:)
+- ❌ **main 브랜치에서 코드 작업 절대 금지**
+
+---
+
 ### 새 작업을 시작할 때
 1. **`docs/todos.md`를 읽고** 다음 작업 확인
-2. **Phase 브랜치 생성** (`phase/<name>`)
+2. **현재 브랜치 확인** (main이면 phase 브랜치로 전환!)
+3. **Phase 브랜치 생성/전환** (`phase/<name>`)
 3. **TDD 사이클 시작** (RED → GREEN → REFACTOR)
 4. **단계별 커밋**
 5. **`todos.md` 업데이트** (`docs:` prefix)
