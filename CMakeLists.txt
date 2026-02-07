@@ -21,6 +21,8 @@ set(SOURCES
     src/file_scanner.cpp
     src/search_criteria.cpp
     src/pattern_matcher.cpp
+    src/content_searcher.cpp
+    src/ignore_patterns.cpp
 )
 
 # Header files
@@ -30,6 +32,8 @@ set(HEADERS
     include/file_scanner.h
     include/search_criteria.h
     include/pattern_matcher.h
+    include/content_searcher.h
+    include/ignore_patterns.h
 )
 
 # Main executable
@@ -58,6 +62,8 @@ add_executable(tests
     tests/test_file_scanner.cpp
     tests/test_pattern_matcher.cpp
     tests/test_search_criteria.cpp
+    tests/test_content_searcher.cpp
+    tests/test_ignore_patterns.cpp
     ${SOURCES}
 )
 
