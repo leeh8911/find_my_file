@@ -3,9 +3,11 @@
 
 #include <filesystem>
 #include <functional>
+#include <memory>
 #include <string>
 
 #include "file_info.h"
+#include "ignore_patterns.h"
 #include "search_criteria.h"
 #include "search_result.h"
 
@@ -73,8 +75,23 @@ class FileScanner
      */
     bool getFollowSymlinks() const { return followSymlinks_; }
 
+    /**
+     * @brief Set ignore patterns
+     * @param patterns IgnorePatterns object
+     */
+    void setIgnorePatterns(const IgnorePatterns& patterns)
+    {
+        ignorePatterns_ = patterns;
+    }
+
+    /**
+     * @brief Get ignore patterns
+     */
+    const IgnorePatterns& getIgnorePatterns() const { return ignorePatterns_; }
+
  private:
     bool followSymlinks_ = false;
+    IgnorePatterns ignorePatterns_;
 
     /**
      * @brief Internal recursive scan implementation

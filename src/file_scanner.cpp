@@ -2,6 +2,7 @@
 
 #include <iostream>
 
+#include "content_searcher.h"
 #include "pattern_matcher.h"
 
 namespace fmf
@@ -143,6 +144,12 @@ bool FileScanner::shouldProcess(const std::filesystem::path& path)
         return false;
     }
 
+    // Check ignore patterns
+    if (ignorePatterns_.shouldIgnore(path))
+    {
+        return false;
+    }
+
     return true;
 }
 
@@ -190,9 +197,24 @@ bool FileScanner::matchesCriteria(const FileInfo& fileInfo,
     // Check name pattern
     if (!criteria.getNamePattern().empty())
     {
-        if (!PatternMatcher::matchWildcard(criteria.getNamePattern(),
-                                           fileInfo.getFileName(),
-                                           criteria.isCaseSensitive()))
+        bool matches = false;
+
+        if (criteria.isUseRegex())
+        {
+            // Use regex matching
+            matches = PatternMatcher::matchRegex(criteria.getNamePattern(),
+                                                fileInfo.getFileName(),
+                                                criteria.isCaseSensitive());
+        }
+        else
+        {
+            // Use wildcard matching
+            matches = PatternMatcher::matchWildcard(criteria.getNamePattern(),
+                                                   fileInfo.getFileName(),
+                                                   criteria.isCaseSensitive());
+        }
+
+        if (!matches)
         {
             return false;
         }
@@ -201,9 +223,22 @@ bool FileScanner::matchesCriteria(const FileInfo& fileInfo,
     // Check path pattern
     if (!criteria.getPathPattern().empty())
     {
-        if (!PatternMatcher::matchWildcard(criteria.getPathPattern(),
-                                           fileInfo.getPath(),
-                                           criteria.isCaseSensitive()))
+        bool matches = false;
+
+        if (criteria.isUseRegex())
+        {
+            matches = PatternMatcher::matchRegex(criteria.getPathPattern(),
+                                                fileInfo.getPath(),
+                                                criteria.isCaseSensitive());
+        }
+        else
+        {
+            matches = PatternMatcher::matchWildcard(criteria.getPathPattern(),
+                                                   fileInfo.getPath(),
+                                                   criteria.isCaseSensitive());
+        }
+
+        if (!matches)
         {
             return false;
         }
@@ -252,6 +287,34 @@ bool FileScanner::matchesCriteria(const FileInfo& fileInfo,
     if (criteria.getMaxSize().has_value())
     {
         if (fileInfo.getSize() > criteria.getMaxSize().value())
+        {
+            return false;
+        }
+    }
+
+    // Check modification time
+    if (criteria.getMinModifiedTime().has_value())
+    {
+        if (fileInfo.getLastWriteTime() < criteria.getMinModifiedTime().value())
+        {
+            return false;
+        }
+    }
+    if (criteria.getMaxModifiedTime().has_value())
+    {
+        if (fileInfo.getLastWriteTime() > criteria.getMaxModifiedTime().value())
+        {
+            return false;
+        }
+    }
+
+    // Check content pattern (only for regular files)
+    if (criteria.hasContentPattern() && fileInfo.isRegularFile())
+    {
+        if (!ContentSearcher::searchInFile(fileInfo.getPath(),
+                                          criteria.getContentPattern(),
+                                          criteria.isUseRegex(),
+                                          criteria.isCaseSensitive()))
         {
             return false;
         }
