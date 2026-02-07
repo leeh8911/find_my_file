@@ -31,6 +31,7 @@ TESTS=(
     "uc_content_search.sh"
     "uc_ignore_patterns.sh"
     "uc_parallel_scan.sh"
+    "uc_output_formats.sh"
 )
 
 PASSED=0
