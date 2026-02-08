@@ -22,10 +22,13 @@
 
 #include "adapters/cli/command_line_parser.h"
 #include "adapters/presenters/output_formatter.h"
+#include "application/ports/mock_vector_store.h"
 #include "application/services/ignore_patterns.h"
 #include "application/use_cases/file_scanner.h"
-#include "infrastructure/config/config_file.h"
+#include "application/use_cases/semantic_searcher.h"
 #include "infrastructure/ai/image_indexer.h"
+#include "infrastructure/ai/local_embedding_provider.h"
+#include "infrastructure/config/config_file.h"
 #include "infrastructure/logging/logger.h"
 
 using namespace fmf;
@@ -69,17 +72,17 @@ bool downloadFile(const std::string& url, const std::string& destination)
 int runImageIndexer(const ApplicationConfig& config)
 {
 #ifndef ENABLE_IMAGE_INDEX
-    std::cerr << "Error: Image indexing support is not enabled in this build.\n";
+    std::cerr
+        << "Error: Image indexing support is not enabled in this build.\n";
     return 1;
 #else
     try
     {
         std::vector<std::string> ocrLangs = {"kor", "eng"};
         const char* captionEnv = std::getenv("FMF_CAPTION_MODEL");
-        const std::string captionModel =
-            captionEnv ? captionEnv : "blip-onnx";
-        const std::string embeddingModel = expandHome(
-            "~/.fmf/models/all-MiniLM-L6-v2.onnx");
+        const std::string captionModel = captionEnv ? captionEnv : "blip-onnx";
+        const std::string embeddingModel =
+            expandHome("~/.fmf/models/all-MiniLM-L6-v2.onnx");
 
         if (!fileExists(embeddingModel))
         {
@@ -156,6 +159,66 @@ int runImageIndexer(const ApplicationConfig& config)
     return 0;
 #endif
 }
+
+int runSemanticSearch(const ApplicationConfig& config)
+{
+    const std::string modelPath =
+        expandHome("~/.fmf/models/all-MiniLM-L6-v2.onnx");
+
+    if (!fileExists(modelPath))
+    {
+        const char* url = std::getenv("FMF_EMBEDDING_MODEL_URL");
+        if (!url)
+        {
+            std::cerr << "Error: Embedding model not found at " << modelPath
+                      << "\n"
+                      << "Set FMF_EMBEDDING_MODEL_URL to auto-download.\n";
+            return 1;
+        }
+
+        std::filesystem::path modelFile(modelPath);
+        if (modelFile.has_parent_path())
+        {
+            std::filesystem::create_directories(modelFile.parent_path());
+        }
+
+        if (!downloadFile(url, modelPath))
+        {
+            std::cerr << "Error: Failed to download embedding model.\n";
+            return 1;
+        }
+    }
+
+    try
+    {
+        auto provider = std::make_unique<LocalEmbeddingProvider>(modelPath);
+        auto store = std::make_unique<MockVectorStore>();
+        SemanticSearcher searcher(std::move(provider), std::move(store));
+
+        size_t indexed =
+            searcher.indexDirectory(config.targetPath, config.recursive);
+        if (indexed == 0)
+        {
+            std::cerr << "Error: No files indexed for semantic search.\n";
+            return 1;
+        }
+
+        auto results =
+            searcher.search(config.semanticSearchQuery, config.semanticTopK);
+        for (const auto& result : results)
+        {
+            std::cout << result.fileInfo.getPath().string() << "\t"
+                      << result.relevanceScore << "\n";
+        }
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "Error: " << e.what() << "\n";
+        return 1;
+    }
+
+    return 0;
+}
 }  // namespace
 
 /**
@@ -210,6 +273,11 @@ int main(int argc, char* argv[])
     if (config.indexImage)
     {
         return runImageIndexer(config);
+    }
+
+    if (!config.semanticSearchQuery.empty())
+    {
+        return runSemanticSearch(config);
     }
 
     // Configure Logger based on verbosity level

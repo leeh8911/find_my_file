@@ -132,22 +132,22 @@
 
 ### 6. CLI 통합 (SemanticSearcher 연동)
 - [ ] CommandLineParser 확장
-  - [ ] --semantic-search QUERY
+  - [x] --semantic-search QUERY
   - [ ] --similar FILE
   - [ ] --index (인덱싱만 수행)
   - [ ] --rebuild-index
   - [ ] --embedding-provider [openai|local]
-  - [ ] --top-k N
+  - [x] --top-k N
 - [ ] ApplicationConfig 확장
-  - [ ] semanticSearchQuery
+  - [x] semanticSearchQuery
   - [ ] similarFile
   - [ ] embeddingProvider
-  - [ ] topK
+  - [x] topK
 - [ ] main.cpp 통합
-  - [ ] Semantic search 모드 분기
+  - [x] Semantic search 모드 분기
   - [ ] Index 자동 생성/업데이트
-  - [ ] 결과 출력 (relevance score 포함)
-- [ ] 통합 테스트: CLI 시나리오 (uc_semantic_search.sh)
+  - [x] 결과 출력 (relevance score 포함)
+- [x] 통합 테스트: CLI 시나리오 (uc_semantic_search_cli.sh)
 
 ### 7. Hybrid Search (선택적)
 - [ ] QueryProcessor 클래스
@@ -198,6 +198,20 @@
 > **핵심 전략**: 모든 파일 타입 → 텍스트 변환 → Chunking → Text Embedding → Vector Index
 > 
 > **참고**: architecture.md의 "Multimodal Document Embedding Pipeline" 섹션 참조
+
+#### 11.0 우선순위 계획 (유사 구현끼리 묶기)
+- [ ] 그룹 A: 순수 텍스트/구조 텍스트
+  - [ ] txt, md
+  - [ ] json, yaml
+  - [ ] csv
+- [ ] 그룹 B: OOXML 계열 (zip+xml 파싱 공통)
+  - [ ] docx
+  - [ ] pptx
+  - [ ] xlsx
+- [ ] 그룹 C: PDF
+  - [ ] pdf (text + optional OCR)
+- [ ] 그룹 D: HWP
+  - [ ] hwp (인코딩/외부 라이브러리 의존)
 
 #### 11.1 Image Normalization Pipeline (OCR + Caption)
 - [x] IMG-001: 이미지 OCR 서비스 (tesseract C++ API)

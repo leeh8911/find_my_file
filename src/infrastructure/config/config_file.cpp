@@ -234,6 +234,14 @@ std::optional<ApplicationConfig> ConfigFile::sectionToConfig(
         {
             config.logFile = value;
         }
+        else if (key == "semantic_search")
+        {
+            config.semanticSearchQuery = value;
+        }
+        else if (key == "top_k")
+        {
+            config.semanticTopK = std::stoul(value);
+        }
         // Search criteria
         else if (key == "name")
         {

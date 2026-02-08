@@ -43,8 +43,10 @@ struct ApplicationConfig
     std::string logFile;      ///< Log file path (empty = no file logging)
     SearchCriteria criteria;  ///< Search criteria and filters
     bool indexImage = false;  ///< Run image indexing pipeline
-    std::string indexImagePath;  ///< Image file or directory path
-    std::string indexDbPath;     ///< Output index path
+    std::string indexImagePath;       ///< Image file or directory path
+    std::string indexDbPath;          ///< Output index path
+    std::string semanticSearchQuery;  ///< Semantic search query
+    size_t semanticTopK = 5;          ///< Semantic search top-K
 };
 
 /**

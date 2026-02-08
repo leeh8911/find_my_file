@@ -1,5 +1,7 @@
 #include "infrastructure/ai/image_indexer.h"
 
+#include <sqlite3.h>
+
 #include <algorithm>
 #include <cmath>
 #include <ctime>
@@ -10,8 +12,6 @@
 #include <map>
 #include <sstream>
 #include <stdexcept>
-
-#include <sqlite3.h>
 
 #ifdef FMF_HAVE_OPENSSL
 #include <openssl/sha.h>
@@ -165,7 +165,8 @@ std::vector<std::pair<std::string, double>> ImageIndexer::search(
     sqlite3_stmt* stmt = nullptr;
     sqlite3_prepare_v2(reinterpret_cast<sqlite3*>(dbHandle_), sql, -1, &stmt,
                        nullptr);
-    sqlite3_bind_text(stmt, 1, embeddingVersionId_.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 1, embeddingVersionId_.c_str(), -1,
+                      SQLITE_TRANSIENT);
 
     std::vector<std::string> paths;
     std::vector<std::vector<float>> embeddings;
@@ -192,9 +193,8 @@ std::vector<std::pair<std::string, double>> ImageIndexer::search(
     for (size_t i = 0; i < embeddings.size(); ++i)
     {
         double score = 0.0;
-        for (size_t j = 0; j < embeddings[i].size() &&
-                           j < queryEmbedding.size();
-             ++j)
+        for (size_t j = 0;
+             j < embeddings[i].size() && j < queryEmbedding.size(); ++j)
         {
             score += embeddings[i][j] * queryEmbedding[j];
         }
@@ -291,7 +291,8 @@ void ImageIndexer::ensureMeta()
     sqlite3_prepare_v2(reinterpret_cast<sqlite3*>(dbHandle_), upsert, -1,
                        &upsertStmt, nullptr);
 
-    auto setMeta = [&](const std::string& key, const std::string& value) {
+    auto setMeta = [&](const std::string& key, const std::string& value)
+    {
         sqlite3_bind_text(upsertStmt, 1, key.c_str(), -1, SQLITE_TRANSIENT);
         sqlite3_bind_text(upsertStmt, 2, value.c_str(), -1, SQLITE_TRANSIENT);
         sqlite3_step(upsertStmt);
@@ -342,7 +343,8 @@ void ImageIndexer::upsert(const IndexedImage& record,
     sqlite3_bind_text(stmt, 3, record.createdAt.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(stmt, 4, record.updatedAt.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(stmt, 5, record.ocrText.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_text(stmt, 6, record.captionText.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 6, record.captionText.c_str(), -1,
+                      SQLITE_TRANSIENT);
     sqlite3_bind_text(stmt, 7, record.indexText.c_str(), -1, SQLITE_TRANSIENT);
     if (record.ocrConfidence.has_value())
     {
@@ -371,8 +373,9 @@ void ImageIndexer::upsert(const IndexedImage& record,
 
 std::string ImageIndexer::buildEmbeddingVersionId() const
 {
-    std::string raw = embeddingModelName_ + "|" + captionService_.getModelName() +
-                      "|" + joinLanguages(ocrService_.getUsedLanguages()) + "|" +
+    std::string raw = embeddingModelName_ + "|" +
+                      captionService_.getModelName() + "|" +
+                      joinLanguages(ocrService_.getUsedLanguages()) + "|" +
                       ImageIndexTextBuilder::MERGE_RULE_VERSION;
 
     std::hash<std::string> hasher;
@@ -458,23 +461,24 @@ IndexedImage ImageIndexer::indexImage(const std::string& path)
     if (joinLanguages(ocrLanguages_) !=
         joinLanguages(ocrService_.getUsedLanguages()))
     {
-        logImageEvent("ocr_language_fallback", "warn",
-                      {{"requested", joinLanguages(ocrLanguages_)},
-                       {"used", joinLanguages(ocrService_.getUsedLanguages())}});
+        logImageEvent(
+            "ocr_language_fallback", "warn",
+            {{"requested", joinLanguages(ocrLanguages_)},
+             {"used", joinLanguages(ocrService_.getUsedLanguages())}});
     }
 
-    logImageEvent("ocr_complete", "info",
-                  {{"file_path", path},
-                   {"ocr_languages", ocrResult.languages},
-                   {"ocr_confidence",
-                    ocrResult.confidence.has_value()
-                        ? toString(ocrResult.confidence.value())
-                        : ""}});
+    logImageEvent(
+        "ocr_complete", "info",
+        {{"file_path", path},
+         {"ocr_languages", ocrResult.languages},
+         {"ocr_confidence", ocrResult.confidence.has_value()
+                                ? toString(ocrResult.confidence.value())
+                                : ""}});
 
     auto captionResult = captionService_.generateCaption(path);
-    logImageEvent("caption_complete", "info",
-                  {{"file_path", path},
-                   {"caption_model", captionResult.modelName}});
+    logImageEvent(
+        "caption_complete", "info",
+        {{"file_path", path}, {"caption_model", captionResult.modelName}});
 
     auto indexTextResult =
         textBuilder_.build(ocrResult.text, captionResult.text);

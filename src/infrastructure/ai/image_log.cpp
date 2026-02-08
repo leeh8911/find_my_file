@@ -60,8 +60,7 @@ void logImageEvent(const std::string& event, const std::string& level,
 
     for (const auto& [key, value] : fields)
     {
-        out << ",\"" << escapeJson(key) << "\":\"" << escapeJson(value)
-            << "\"";
+        out << ",\"" << escapeJson(key) << "\":\"" << escapeJson(value) << "\"";
     }
 
     out << "}";

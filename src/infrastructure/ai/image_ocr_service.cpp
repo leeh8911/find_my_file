@@ -1,11 +1,11 @@
 #include "infrastructure/ai/image_ocr_service.h"
 
+#include <leptonica/allheaders.h>
+#include <tesseract/baseapi.h>
+
 #include <algorithm>
 #include <sstream>
 #include <stdexcept>
-
-#include <leptonica/allheaders.h>
-#include <tesseract/baseapi.h>
 
 namespace fmf
 {

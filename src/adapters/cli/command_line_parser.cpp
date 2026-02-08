@@ -279,6 +279,33 @@ bool CommandLineParser::parseOption(const std::string& arg, int argc,
         }
         config.logFile = argv[++currentIndex];
     }
+    // Semantic search
+    else if (arg == "--semantic-search")
+    {
+        if (currentIndex + 1 >= argc)
+        {
+            std::cerr << "Error: --semantic-search requires a query\n";
+            return false;
+        }
+        config.semanticSearchQuery = argv[++currentIndex];
+    }
+    else if (arg == "--top-k")
+    {
+        if (currentIndex + 1 >= argc)
+        {
+            std::cerr << "Error: --top-k requires a value\n";
+            return false;
+        }
+        try
+        {
+            config.semanticTopK = std::stoull(argv[++currentIndex]);
+        }
+        catch (...)
+        {
+            std::cerr << "Error: Invalid top-k value\n";
+            return false;
+        }
+    }
     // Target path (no flag)
     else if (arg[0] != '-')
     {
@@ -309,6 +336,12 @@ bool CommandLineParser::validateConfig(const ApplicationConfig& config) const
     if (config.targetPath.empty())
     {
         std::cerr << "Error: No directory specified\n";
+        return false;
+    }
+
+    if (config.semanticTopK == 0)
+    {
+        std::cerr << "Error: --top-k must be greater than 0\n";
         return false;
     }
 
@@ -358,7 +391,8 @@ bool CommandLineParser::parseImageOption(const std::string& arg, int argc,
     return true;
 }
 
-bool CommandLineParser::validateImageConfig(const ApplicationConfig& config) const
+bool CommandLineParser::validateImageConfig(
+    const ApplicationConfig& config) const
 {
     if (config.indexImagePath.empty())
     {
@@ -427,6 +461,9 @@ void CommandLineParser::printUsage(const char* programName) const
         << "  -v, --verbose        Increase verbosity (-v for info, -vv for "
            "debug)\n"
         << "  --log-file FILE      Write logs to specified file\n"
+        << "\nSemantic Search Options:\n"
+        << "  --semantic-search Q  Semantic search query\n"
+        << "  --top-k N            Number of semantic results (default: 5)\n"
         << "\nOther Options:\n"
         << "  -h, --help           Display this help message\n"
         << "\nSubcommands:\n"

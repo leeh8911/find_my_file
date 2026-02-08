@@ -53,6 +53,7 @@ endif()
 # Optional image indexing dependencies
 if(ENABLE_IMAGE_INDEX)
     find_package(PkgConfig)
+
     if(PkgConfig_FOUND)
         pkg_check_modules(TESSERACT tesseract)
         pkg_check_modules(LEPTONICA lept)
@@ -65,6 +66,7 @@ if(ENABLE_IMAGE_INDEX)
         message(STATUS "Image indexing dependencies found")
         add_compile_definitions(ENABLE_IMAGE_INDEX)
         include_directories(${TESSERACT_INCLUDE_DIRS} ${LEPTONICA_INCLUDE_DIRS})
+
         if(OPENSSL_FOUND)
             add_compile_definitions(FMF_HAVE_OPENSSL)
         endif()
@@ -162,6 +164,7 @@ endif()
 
 if(ENABLE_IMAGE_INDEX AND TESSERACT_FOUND AND LEPTONICA_FOUND AND SQLite3_FOUND AND ONNX_RUNTIME_AVAILABLE)
     target_link_libraries(find_my_files ${TESSERACT_LIBRARIES} ${LEPTONICA_LIBRARIES} SQLite::SQLite3)
+
     if(OPENSSL_FOUND)
         target_link_libraries(find_my_files OpenSSL::Crypto)
     endif()
@@ -221,6 +224,7 @@ endif()
 
 if(ENABLE_IMAGE_INDEX AND TESSERACT_FOUND AND LEPTONICA_FOUND AND SQLite3_FOUND AND ONNX_RUNTIME_AVAILABLE)
     target_link_libraries(tests ${TESSERACT_LIBRARIES} ${LEPTONICA_LIBRARIES} SQLite::SQLite3)
+
     if(OPENSSL_FOUND)
         target_link_libraries(tests OpenSSL::Crypto)
     endif()

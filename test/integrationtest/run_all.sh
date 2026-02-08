@@ -33,6 +33,7 @@ TESTS=(
     "uc_parallel_scan.sh"
     "uc_output_formats.sh"
     "uc_semantic_search.sh"
+    "uc_semantic_search_cli.sh"
 )
 
 PASSED=0

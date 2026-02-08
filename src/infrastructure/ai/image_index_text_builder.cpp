@@ -9,8 +9,8 @@
 namespace fmf
 {
 
-IndexTextResult ImageIndexTextBuilder::build(const std::string& ocrText,
-                                             const std::string& captionText) const
+IndexTextResult ImageIndexTextBuilder::build(
+    const std::string& ocrText, const std::string& captionText) const
 {
     std::string cleanedOcr = cleanText(ocrText);
     std::string cleanedCaption = cleanText(captionText);
@@ -18,7 +18,8 @@ IndexTextResult ImageIndexTextBuilder::build(const std::string& ocrText,
     IndexTextResult result;
     result.ocrText = cleanedOcr;
     result.captionText = cleanedCaption;
-    result.indexText = "[OCR]\n" + cleanedOcr + "\n[CAPTION]\n" + cleanedCaption;
+    result.indexText =
+        "[OCR]\n" + cleanedOcr + "\n[CAPTION]\n" + cleanedCaption;
     return result;
 }
 
