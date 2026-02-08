@@ -42,6 +42,9 @@ struct ApplicationConfig
     int verbosity = 0;        ///< Verbosity level (0=default, 1=info, 2=debug)
     std::string logFile;      ///< Log file path (empty = no file logging)
     SearchCriteria criteria;  ///< Search criteria and filters
+    bool indexImage = false;  ///< Run image indexing pipeline
+    std::string indexImagePath;  ///< Image file or directory path
+    std::string indexDbPath;     ///< Output index path
 };
 
 /**
@@ -144,6 +147,17 @@ class CommandLineParser
      * @return true if valid, false otherwise
      */
     bool validateConfig(const ApplicationConfig& config) const;
+
+    /**
+     * @brief Parse index-image subcommand options
+     */
+    bool parseImageOption(const std::string& arg, int argc, char* argv[],
+                          int& currentIndex, ApplicationConfig& config);
+
+    /**
+     * @brief Validate index-image configuration
+     */
+    bool validateImageConfig(const ApplicationConfig& config) const;
 
     /**
      * @brief Parse format string to OutputFormat enum

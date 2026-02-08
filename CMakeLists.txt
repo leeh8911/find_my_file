@@ -13,6 +13,7 @@ endif()
 
 # Build options
 option(ENABLE_LOCAL_EMBEDDING "Enable local embedding with ONNX Runtime" OFF)
+option(ENABLE_IMAGE_INDEX "Enable image indexing pipeline" OFF)
 
 # Find ONNX Runtime (optional)
 if(ENABLE_LOCAL_EMBEDDING)
@@ -20,19 +21,19 @@ if(ENABLE_LOCAL_EMBEDDING)
     find_path(ONNXRUNTIME_INCLUDE_DIR
         NAMES onnxruntime_cxx_api.h
         PATHS
-            /usr/include/onnxruntime
-            /usr/local/include/onnxruntime
-            $ENV{HOME}/.local/include/onnxruntime
-            ${CMAKE_SOURCE_DIR}/third_party/onnxruntime/include
+        /usr/include/onnxruntime
+        /usr/local/include/onnxruntime
+        $ENV{HOME}/.local/include/onnxruntime
+        ${CMAKE_SOURCE_DIR}/third_party/onnxruntime/include
     )
 
     find_library(ONNXRUNTIME_LIB
         NAMES onnxruntime
         PATHS
-            /usr/lib
-            /usr/local/lib
-            $ENV{HOME}/.local/lib
-            ${CMAKE_SOURCE_DIR}/third_party/onnxruntime/lib
+        /usr/lib
+        /usr/local/lib
+        $ENV{HOME}/.local/lib
+        ${CMAKE_SOURCE_DIR}/third_party/onnxruntime/lib
     )
 
     if(ONNXRUNTIME_INCLUDE_DIR AND ONNXRUNTIME_LIB)
@@ -46,6 +47,29 @@ if(ENABLE_LOCAL_EMBEDDING)
         message(WARNING "ONNX Runtime not found - Local embedding will use placeholder implementation")
         message(WARNING "  To enable: Install ONNX Runtime or set paths manually")
         set(ONNX_RUNTIME_AVAILABLE FALSE)
+    endif()
+endif()
+
+# Optional image indexing dependencies
+if(ENABLE_IMAGE_INDEX)
+    find_package(PkgConfig)
+    if(PkgConfig_FOUND)
+        pkg_check_modules(TESSERACT tesseract)
+        pkg_check_modules(LEPTONICA lept)
+    endif()
+
+    find_package(SQLite3)
+    find_package(OpenSSL)
+
+    if(TESSERACT_FOUND AND LEPTONICA_FOUND AND SQLite3_FOUND AND ONNX_RUNTIME_AVAILABLE)
+        message(STATUS "Image indexing dependencies found")
+        add_compile_definitions(ENABLE_IMAGE_INDEX)
+        include_directories(${TESSERACT_INCLUDE_DIRS} ${LEPTONICA_INCLUDE_DIRS})
+        if(OPENSSL_FOUND)
+            add_compile_definitions(FMF_HAVE_OPENSSL)
+        endif()
+    else()
+        message(WARNING "Image indexing disabled - missing dependencies")
     endif()
 endif()
 
@@ -108,6 +132,23 @@ set(HEADERS
     include/infrastructure/ai/simple_tokenizer.h
 )
 
+if(ENABLE_IMAGE_INDEX AND TESSERACT_FOUND AND LEPTONICA_FOUND AND SQLite3_FOUND AND ONNX_RUNTIME_AVAILABLE)
+    list(APPEND SOURCES
+        src/infrastructure/ai/image_log.cpp
+        src/infrastructure/ai/image_ocr_service.cpp
+        src/infrastructure/ai/image_caption_service.cpp
+        src/infrastructure/ai/image_index_text_builder.cpp
+        src/infrastructure/ai/image_indexer.cpp
+    )
+    list(APPEND HEADERS
+        include/infrastructure/ai/image_log.h
+        include/infrastructure/ai/image_ocr_service.h
+        include/infrastructure/ai/image_caption_service.h
+        include/infrastructure/ai/image_index_text_builder.h
+        include/infrastructure/ai/image_indexer.h
+    )
+endif()
+
 # Main executable
 add_executable(find_my_files
     src/main.cpp
@@ -117,6 +158,13 @@ add_executable(find_my_files
 # Link ONNX Runtime if available
 if(ENABLE_LOCAL_EMBEDDING AND ONNX_RUNTIME_AVAILABLE)
     target_link_libraries(find_my_files ${ONNXRUNTIME_LIB})
+endif()
+
+if(ENABLE_IMAGE_INDEX AND TESSERACT_FOUND AND LEPTONICA_FOUND AND SQLite3_FOUND AND ONNX_RUNTIME_AVAILABLE)
+    target_link_libraries(find_my_files ${TESSERACT_LIBRARIES} ${LEPTONICA_LIBRARIES} SQLite::SQLite3)
+    if(OPENSSL_FOUND)
+        target_link_libraries(find_my_files OpenSSL::Crypto)
+    endif()
 endif()
 
 # Google Test
@@ -169,6 +217,13 @@ target_link_libraries(tests
 # Link ONNX Runtime to tests if available
 if(ENABLE_LOCAL_EMBEDDING AND ONNX_RUNTIME_AVAILABLE)
     target_link_libraries(tests ${ONNXRUNTIME_LIB})
+endif()
+
+if(ENABLE_IMAGE_INDEX AND TESSERACT_FOUND AND LEPTONICA_FOUND AND SQLite3_FOUND AND ONNX_RUNTIME_AVAILABLE)
+    target_link_libraries(tests ${TESSERACT_LIBRARIES} ${LEPTONICA_LIBRARIES} SQLite::SQLite3)
+    if(OPENSSL_FOUND)
+        target_link_libraries(tests OpenSSL::Crypto)
+    endif()
 endif()
 
 include(GoogleTest)

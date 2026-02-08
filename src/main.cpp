@@ -14,16 +14,149 @@
  * implementations.
  */
 
+#include <cstdlib>
+#include <filesystem>
 #include <iostream>
+#include <string>
+#include <vector>
 
 #include "adapters/cli/command_line_parser.h"
 #include "adapters/presenters/output_formatter.h"
 #include "application/services/ignore_patterns.h"
 #include "application/use_cases/file_scanner.h"
 #include "infrastructure/config/config_file.h"
+#include "infrastructure/ai/image_indexer.h"
 #include "infrastructure/logging/logger.h"
 
 using namespace fmf;
+
+namespace
+{
+std::string expandHome(const std::string& path)
+{
+    if (!path.empty() && path[0] == '~')
+    {
+        const char* home = std::getenv("HOME");
+        if (home)
+        {
+            return std::string(home) + path.substr(1);
+        }
+    }
+    return path;
+}
+
+bool fileExists(const std::string& path)
+{
+    return std::filesystem::exists(path);
+}
+
+bool downloadFile(const std::string& url, const std::string& destination)
+{
+#ifdef _WIN32
+    std::string curlCmd = "curl -L -o \"" + destination + "\" \"" + url + "\"";
+    return std::system(curlCmd.c_str()) == 0;
+#else
+    std::string curlCmd = "curl -L -o \"" + destination + "\" \"" + url + "\"";
+    if (std::system(curlCmd.c_str()) == 0)
+    {
+        return true;
+    }
+    std::string wgetCmd = "wget -O \"" + destination + "\" \"" + url + "\"";
+    return std::system(wgetCmd.c_str()) == 0;
+#endif
+}
+
+int runImageIndexer(const ApplicationConfig& config)
+{
+#ifndef ENABLE_IMAGE_INDEX
+    std::cerr << "Error: Image indexing support is not enabled in this build.\n";
+    return 1;
+#else
+    try
+    {
+        std::vector<std::string> ocrLangs = {"kor", "eng"};
+        const char* captionEnv = std::getenv("FMF_CAPTION_MODEL");
+        const std::string captionModel =
+            captionEnv ? captionEnv : "blip-onnx";
+        const std::string embeddingModel = expandHome(
+            "~/.fmf/models/all-MiniLM-L6-v2.onnx");
+
+        if (!fileExists(embeddingModel))
+        {
+            const char* url = std::getenv("FMF_EMBEDDING_MODEL_URL");
+            if (!url)
+            {
+                std::cerr << "Error: Embedding model not found at "
+                          << embeddingModel << "\n"
+                          << "Set FMF_EMBEDDING_MODEL_URL to auto-download.\n";
+                return 1;
+            }
+
+            std::filesystem::path modelPath(embeddingModel);
+            if (modelPath.has_parent_path())
+            {
+                std::filesystem::create_directories(modelPath.parent_path());
+            }
+
+            if (!downloadFile(url, embeddingModel))
+            {
+                std::cerr << "Error: Failed to download embedding model.\n";
+                return 1;
+            }
+        }
+
+        ImageIndexer indexer(config.indexDbPath, ocrLangs, captionModel,
+                             embeddingModel);
+        auto results = indexer.indexPath(config.indexImagePath);
+        if (results.empty())
+        {
+            std::cout << "No images indexed\n";
+            return 1;
+        }
+
+        for (const auto& record : results)
+        {
+            std::cout << "IMAGE: " << record.filePath << "\n";
+            std::cout << "OCR_TEXT: " << record.ocrText << "\n";
+            std::cout << "CAPTION_TEXT: " << record.captionText << "\n";
+            std::cout << "INDEX_TEXT_LEN: " << record.indexText.size() << "\n";
+            std::cout << "EMBED_DIM: " << record.embeddingDim << "\n";
+
+            if (!record.ocrText.empty())
+            {
+                auto neighbors = indexer.search(record.ocrText, 3);
+                std::cout << "PREVIEW_OCR:\n";
+                for (const auto& item : neighbors)
+                {
+                    std::cout << "  " << item.second << " " << item.first
+                              << "\n";
+                }
+            }
+
+            if (!record.captionText.empty())
+            {
+                auto neighbors = indexer.search(record.captionText, 3);
+                std::cout << "PREVIEW_CAPTION:\n";
+                for (const auto& item : neighbors)
+                {
+                    std::cout << "  " << item.second << " " << item.first
+                              << "\n";
+                }
+            }
+
+            std::cout << "---\n";
+        }
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "Error: " << e.what() << "\n";
+        return 1;
+    }
+
+    return 0;
+#endif
+}
+}  // namespace
 
 /**
  * @brief Main entry point
@@ -73,6 +206,11 @@ int main(int argc, char* argv[])
     }
 
     const ApplicationConfig& config = *configOpt;
+
+    if (config.indexImage)
+    {
+        return runImageIndexer(config);
+    }
 
     // Configure Logger based on verbosity level
     auto& logger = Logger::instance();

@@ -26,6 +26,34 @@ std::optional<ApplicationConfig> CommandLineParser::parse(
         return std::nullopt;
     }
 
+    if (std::string(argv[1]) == "index-image")
+    {
+        ApplicationConfig config = defaultConfig;
+        config.indexImage = true;
+
+        for (int i = 2; i < argc; ++i)
+        {
+            std::string arg = argv[i];
+
+            if (arg == "-h" || arg == "--help")
+            {
+                return std::nullopt;
+            }
+
+            if (!parseImageOption(arg, argc, argv, i, config))
+            {
+                return std::nullopt;
+            }
+        }
+
+        if (!validateImageConfig(config))
+        {
+            return std::nullopt;
+        }
+
+        return config;
+    }
+
     // Start with default configuration
     ApplicationConfig config = defaultConfig;
 
@@ -273,6 +301,11 @@ bool CommandLineParser::parseOption(const std::string& arg, int argc,
 
 bool CommandLineParser::validateConfig(const ApplicationConfig& config) const
 {
+    if (config.indexImage)
+    {
+        return validateImageConfig(config);
+    }
+
     if (config.targetPath.empty())
     {
         std::cerr << "Error: No directory specified\n";
@@ -288,6 +321,54 @@ bool CommandLineParser::validateConfig(const ApplicationConfig& config) const
     if (config.criteria.isFilesOnly() && config.criteria.isDirectoriesOnly())
     {
         std::cerr << "Error: Cannot use both --files-only and --dirs-only\n";
+        return false;
+    }
+
+    return true;
+}
+
+bool CommandLineParser::parseImageOption(const std::string& arg, int argc,
+                                         char* argv[], int& currentIndex,
+                                         ApplicationConfig& config)
+{
+    if (arg == "--path")
+    {
+        if (currentIndex + 1 >= argc)
+        {
+            std::cerr << "Error: --path requires a value\n";
+            return false;
+        }
+        config.indexImagePath = argv[++currentIndex];
+    }
+    else if (arg == "--out")
+    {
+        if (currentIndex + 1 >= argc)
+        {
+            std::cerr << "Error: --out requires a value\n";
+            return false;
+        }
+        config.indexDbPath = argv[++currentIndex];
+    }
+    else
+    {
+        std::cerr << "Error: Unknown option: " << arg << "\n";
+        return false;
+    }
+
+    return true;
+}
+
+bool CommandLineParser::validateImageConfig(const ApplicationConfig& config) const
+{
+    if (config.indexImagePath.empty())
+    {
+        std::cerr << "Error: --path is required for index-image\n";
+        return false;
+    }
+
+    if (config.indexDbPath.empty())
+    {
+        std::cerr << "Error: --out is required for index-image\n";
         return false;
     }
 
@@ -348,6 +429,9 @@ void CommandLineParser::printUsage(const char* programName) const
         << "  --log-file FILE      Write logs to specified file\n"
         << "\nOther Options:\n"
         << "  -h, --help           Display this help message\n"
+        << "\nSubcommands:\n"
+        << "  index-image --path <image_or_folder> --out <index_db>\n"
+        << "      Index images with OCR + caption into unified embeddings\n"
         << "\nExamples:\n"
         << "  " << programName << " .\n"
         << "  " << programName << " -r /home/user\n"
