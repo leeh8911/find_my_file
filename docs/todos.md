@@ -199,6 +199,18 @@
 > 
 > **참고**: architecture.md의 "Multimodal Document Embedding Pipeline" 섹션 참조
 
+#### 11.1 Image Normalization Pipeline (OCR + Caption)
+- [x] IMG-001: 이미지 OCR 서비스 (tesseract C++ API)
+- [x] IMG-002: 이미지 캡션 서비스 (ONNX/CLI fallback)
+- [x] IMG-003: index_text 병합/정제 규칙 구현 (deterministic)
+- [x] IMG-004: 텍스트 임베딩 모듈 (all-MiniLM-L6-v2 동일 모델)
+- [x] IMG-005: 이미지 인덱서 오케스트레이션 + SQLite 저장
+- [x] IMG-006: metadata/버전 스키마 정의 및 stale 처리
+- [x] IMG-007: CLI `find_my_files index-image` 통합
+- [x] IMG-008: 모델 자동 다운로드 (~/.fmf/models)
+- [x] IMG-009: 구조화 로그(JSON lines) 추가
+- [x] IMG-010: 통합 테스트 스크립트(이미지 인덱싱/검색)
+
 #### 11.1. PDF 파일 지원
 - [ ] PDF 파서 구현
   - [ ] 라이브러리 선택: pdfium 또는 poppler
