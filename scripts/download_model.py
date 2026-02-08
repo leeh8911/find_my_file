@@ -35,16 +35,27 @@ def convert_model():
     
     model_path = output_dir / "all-MiniLM-L6-v2.onnx"
     
+    def has_dynamic_batch(onnx_model):
+        try:
+            dims = onnx_model.graph.input[0].type.tensor_type.shape.dim
+            batch_dim = dims[0]
+            return bool(batch_dim.dim_param) or batch_dim.dim_value == 0
+        except Exception:
+            return False
+
     # Check if model already exists
     if model_path.exists():
         print(f"✓ Model already exists: {model_path}")
-        
-        # Verify it's valid
+
+        # Verify it's valid and supports dynamic batch
         try:
             onnx_model = onnx.load(str(model_path))
             onnx.checker.check_model(onnx_model)
-            print("✓ Model verification passed")
-            return str(model_path)
+            if has_dynamic_batch(onnx_model):
+                print("✓ Model verification passed")
+                return str(model_path)
+            print("⚠ Existing model has fixed batch size")
+            print("  Re-exporting with dynamic axes...")
         except Exception as e:
             print(f"⚠ Existing model is invalid: {e}")
             print("  Re-downloading...")
@@ -74,8 +85,9 @@ def convert_model():
                 "attention_mask": {0: "batch", 1: "sequence"},
                 "last_hidden_state": {0: "batch", 1: "sequence"}
             },
-            opset_version=14,
-            do_constant_folding=True
+            opset_version=18,
+            do_constant_folding=True,
+            dynamo=False
         )
     
     # Verify exported model

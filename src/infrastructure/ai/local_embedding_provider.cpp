@@ -103,11 +103,11 @@ class LocalEmbeddingProvider::Impl
         // Create session and load model
 #ifdef _WIN32
         std::wstring wideModelPath(m_modelPath.begin(), m_modelPath.end());
-        m_session = std::make_unique<Ort::Session>(
-            m_env, wideModelPath.c_str(), m_sessionOptions);
+        m_session = std::make_unique<Ort::Session>(m_env, wideModelPath.c_str(),
+                                                   m_sessionOptions);
 #else
         m_session = std::make_unique<Ort::Session>(m_env, m_modelPath.c_str(),
-                                                    m_sessionOptions);
+                                                   m_sessionOptions);
 #endif
 
         // Get input/output info
@@ -120,7 +120,7 @@ class LocalEmbeddingProvider::Impl
         const std::vector<std::vector<int64_t>>& batchTokens)
     {
         size_t batchSize = batchTokens.size();
-        size_t maxLength = m_tokenizer.maxLength();
+        size_t maxLength = m_tokenizer.getMaxLength();
 
         std::vector<int64_t> inputIds(batchSize * maxLength, 0);
         std::vector<int64_t> attentionMask(batchSize * maxLength, 0);
@@ -141,17 +141,17 @@ class LocalEmbeddingProvider::Impl
     }
 
     std::vector<float> runInference(const std::vector<int64_t>& inputIds,
-                                      const std::vector<int64_t>& attentionMask)
+                                    const std::vector<int64_t>& attentionMask)
     {
-        size_t batchSize = inputIds.size() / m_tokenizer.maxLength();
-        size_t seqLength = m_tokenizer.maxLength();
+        size_t batchSize = inputIds.size() / m_tokenizer.getMaxLength();
+        size_t seqLength = m_tokenizer.getMaxLength();
 
         // Create input tensors
         Ort::MemoryInfo memoryInfo =
             Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault);
 
         std::vector<int64_t> inputShape = {static_cast<int64_t>(batchSize),
-                                            static_cast<int64_t>(seqLength)};
+                                           static_cast<int64_t>(seqLength)};
 
         Ort::Value inputIdsTensor = Ort::Value::CreateTensor<int64_t>(
             memoryInfo, const_cast<int64_t*>(inputIds.data()), inputIds.size(),
@@ -186,7 +186,8 @@ class LocalEmbeddingProvider::Impl
 
         // Extract output data
         float* outputData = outputTensors[0].GetTensorMutableData<float>();
-        auto outputShape = outputTensors[0].GetTensorTypeAndShapeInfo().GetShape();
+        auto outputShape =
+            outputTensors[0].GetTensorTypeAndShapeInfo().GetShape();
 
         size_t hiddenSize = outputShape[2];
         size_t totalElements = batchSize * seqLength * hiddenSize;
@@ -194,12 +195,13 @@ class LocalEmbeddingProvider::Impl
         return std::vector<float>(outputData, outputData + totalElements);
     }
 
-    std::vector<float> extractEmbedding(const std::vector<float>& outputs,
-                                         const std::vector<int64_t>& attentionMask,
-                                         size_t batchIndex)
+    std::vector<float> extractEmbedding(
+        const std::vector<float>& outputs,
+        const std::vector<int64_t>& attentionMask, size_t batchIndex)
     {
-        // Mean pooling: average all token embeddings (weighted by attention mask)
-        size_t seqLength = m_tokenizer.maxLength();
+        // Mean pooling: average all token embeddings (weighted by attention
+        // mask)
+        size_t seqLength = m_tokenizer.getMaxLength();
         size_t offset = batchIndex * seqLength * m_dimension;
 
         std::vector<float> embedding(m_dimension, 0.0f);

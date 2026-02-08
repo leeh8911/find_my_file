@@ -17,10 +17,23 @@ NC='\033[0m' # No Color
 echo "=== UC: Semantic Search Integration Test ==="
 
 # Check if ONNX Runtime is available
-if ! grep -q "ENABLE_ONNX_RUNTIME" "$BUILD_DIR/CMakeCache.txt" 2>/dev/null; then
+if ! grep -q "ONNXRUNTIME_INCLUDE_DIR" "$BUILD_DIR/CMakeCache.txt" 2>/dev/null; then
     echo -e "${YELLOW}⚠ ONNX Runtime not enabled, skipping semantic search test${NC}"
     echo "  To enable: cmake .. -DENABLE_LOCAL_EMBEDDING=ON"
     exit 0
+fi
+
+ONNX_INCLUDE_DIR=$(grep -E "^ONNXRUNTIME_INCLUDE_DIR:PATH=" "$BUILD_DIR/CMakeCache.txt" | cut -d= -f2)
+ONNX_LIB_PATH=$(grep -E "^ONNXRUNTIME_LIB:FILEPATH=" "$BUILD_DIR/CMakeCache.txt" | cut -d= -f2)
+ONNX_LIB_DIR=""
+ONNX_CXXFLAGS=""
+ONNX_LDFLAGS=""
+
+if [ -n "$ONNX_INCLUDE_DIR" ] && [ -n "$ONNX_LIB_PATH" ]; then
+    ONNX_LIB_DIR=$(dirname "$ONNX_LIB_PATH")
+    ONNX_CXXFLAGS="-DENABLE_ONNX_RUNTIME -I$ONNX_INCLUDE_DIR"
+    ONNX_LDFLAGS="-L$ONNX_LIB_DIR -lonnxruntime"
+    export LD_LIBRARY_PATH="$ONNX_LIB_DIR:$LD_LIBRARY_PATH"
 fi
 
 # Check Python dependencies
@@ -125,9 +138,10 @@ EOF
 # Compile test helper
 cd "$BUILD_DIR"
 g++ -std=c++17 -I"$SCRIPT_DIR/../../include" \
+    $ONNX_CXXFLAGS \
     test_provider_init.cpp \
     "$SCRIPT_DIR/../../src/infrastructure/ai/local_embedding_provider.cpp" \
-    "$SCRIPT_DIR/../../src/infrastructure/ai/simple_tokenizer.cpp" \
+    $ONNX_LDFLAGS \
     -o test_provider_init 2>/dev/null || true
 
 if [ -f "test_provider_init" ]; then
@@ -182,9 +196,10 @@ EOF
 
 cd "$BUILD_DIR"
 g++ -std=c++17 -I"$SCRIPT_DIR/../../include" \
+    $ONNX_CXXFLAGS \
     test_embedding_consistency.cpp \
     "$SCRIPT_DIR/../../src/infrastructure/ai/local_embedding_provider.cpp" \
-    "$SCRIPT_DIR/../../src/infrastructure/ai/simple_tokenizer.cpp" \
+    $ONNX_LDFLAGS \
     -o test_embedding_consistency 2>/dev/null || true
 
 if [ -f "test_embedding_consistency" ]; then
@@ -237,9 +252,10 @@ EOF
 
 cd "$BUILD_DIR"
 g++ -std=c++17 -I"$SCRIPT_DIR/../../include" \
+    $ONNX_CXXFLAGS \
     test_batch_processing.cpp \
     "$SCRIPT_DIR/../../src/infrastructure/ai/local_embedding_provider.cpp" \
-    "$SCRIPT_DIR/../../src/infrastructure/ai/simple_tokenizer.cpp" \
+    $ONNX_LDFLAGS \
     -o test_batch_processing 2>/dev/null || true
 
 if [ -f "test_batch_processing" ]; then
@@ -257,10 +273,12 @@ fi
 echo ""
 echo "Test 4: SemanticSearcher integration"
 cat > "$BUILD_DIR/test_semantic_searcher.cpp" << 'EOF'
-#include <iostream>
 #include <filesystem>
-#include "application/use_cases/semantic_searcher.h"
+#include <iostream>
+#include <memory>
+
 #include "application/ports/mock_vector_store.h"
+#include "application/use_cases/semantic_searcher.h"
 #include "infrastructure/ai/local_embedding_provider.h"
 
 int main(int argc, char** argv) {
@@ -274,11 +292,11 @@ int main(int argc, char** argv) {
         std::string dataDir = argv[2];
         
         // Create provider and store
-        auto provider = std::make_shared<fmf::LocalEmbeddingProvider>(modelPath);
-        auto store = std::make_shared<fmf::MockVectorStore>();
-        
+        auto provider = std::make_unique<fmf::LocalEmbeddingProvider>(modelPath);
+        auto store = std::make_unique<fmf::MockVectorStore>();
+
         // Create searcher
-        fmf::SemanticSearcher searcher(provider, store);
+        fmf::SemanticSearcher searcher(std::move(provider), std::move(store));
         
         // Index files
         for (const auto& entry : std::filesystem::directory_iterator(dataDir)) {
@@ -307,12 +325,13 @@ EOF
 
 cd "$BUILD_DIR"
 g++ -std=c++17 -I"$SCRIPT_DIR/../../include" \
+    $ONNX_CXXFLAGS \
     test_semantic_searcher.cpp \
     "$SCRIPT_DIR/../../src/infrastructure/ai/local_embedding_provider.cpp" \
-    "$SCRIPT_DIR/../../src/infrastructure/ai/simple_tokenizer.cpp" \
     "$SCRIPT_DIR/../../src/application/use_cases/semantic_searcher.cpp" \
     "$SCRIPT_DIR/../../src/domain/entities/file_info.cpp" \
     "$SCRIPT_DIR/../../src/domain/entities/search_result.cpp" \
+    $ONNX_LDFLAGS \
     -o test_semantic_searcher 2>/dev/null || true
 
 if [ -f "test_semantic_searcher" ]; then
@@ -333,10 +352,12 @@ fi
 echo ""
 echo "Test 5: Similar file search"
 cat > "$BUILD_DIR/test_similar_search.cpp" << 'EOF'
-#include <iostream>
 #include <filesystem>
-#include "application/use_cases/semantic_searcher.h"
+#include <iostream>
+#include <memory>
+
 #include "application/ports/mock_vector_store.h"
+#include "application/use_cases/semantic_searcher.h"
 #include "infrastructure/ai/local_embedding_provider.h"
 
 int main(int argc, char** argv) {
@@ -346,9 +367,9 @@ int main(int argc, char** argv) {
         std::string modelPath = argv[1];
         std::string dataDir = argv[2];
         
-        auto provider = std::make_shared<fmf::LocalEmbeddingProvider>(modelPath);
-        auto store = std::make_shared<fmf::MockVectorStore>();
-        fmf::SemanticSearcher searcher(provider, store);
+        auto provider = std::make_unique<fmf::LocalEmbeddingProvider>(modelPath);
+        auto store = std::make_unique<fmf::MockVectorStore>();
+        fmf::SemanticSearcher searcher(std::move(provider), std::move(store));
         
         // Index files
         std::string targetFile;
@@ -385,12 +406,13 @@ EOF
 
 cd "$BUILD_DIR"
 g++ -std=c++17 -I"$SCRIPT_DIR/../../include" \
+    $ONNX_CXXFLAGS \
     test_similar_search.cpp \
     "$SCRIPT_DIR/../../src/infrastructure/ai/local_embedding_provider.cpp" \
-    "$SCRIPT_DIR/../../src/infrastructure/ai/simple_tokenizer.cpp" \
     "$SCRIPT_DIR/../../src/application/use_cases/semantic_searcher.cpp" \
     "$SCRIPT_DIR/../../src/domain/entities/file_info.cpp" \
     "$SCRIPT_DIR/../../src/domain/entities/search_result.cpp" \
+    $ONNX_LDFLAGS \
     -o test_similar_search 2>/dev/null || true
 
 if [ -f "test_similar_search" ]; then
